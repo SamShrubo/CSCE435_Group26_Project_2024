@@ -1,12 +1,18 @@
 # CSCE 435 Group project
 
-## 0. Group number: 
+## 0. Group number: 26
 
 ## 1. Group members:
-1. First
-2. Second
-3. Third
-4. Fourth
+1. Caroline Jia
+   - Username: cjia2003
+2. Griffin Beaudreau
+   - Username: CyberGriffin
+3. Kaitlyn Griffin
+   - Username: 
+4. Samuel Bush
+   - Username: SamShrubo
+5. Zhongyou Wu
+   - Username: 
 
 ## 2. Project topic (e.g., parallel sorting algorithms)
 
