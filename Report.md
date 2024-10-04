@@ -5,14 +5,19 @@
 ## 1. Group members:
 1. Caroline Jia
    - Username: cjia2003
+   - Algorithm: Radix Sort
 2. Griffin Beaudreau
    - Username: CyberGriffin
+   - Algorithm: Column Sort
 3. Kaitlyn Griffin
-   - Username: 
+   - Username: kaitlyngrif
+   - Algorithm: Sample Sort
 4. Samuel Bush
    - Username: SamShrubo
+   - Algorithm: Merge Sort
 5. Zhongyou Wu
-   - Username:
+   - Username: ZhongyouWuTAMU
+   - Algorithm: Bitonic Sort
 
 ### 1a. Team Communication:
 We will be using Discord for our team communications.
@@ -22,7 +27,7 @@ We will be using Discord for our team communications.
 ### 2a. Brief project description (what algorithms will you be comparing and on what architectures)
 
 - Bitonic Sort:
-- Sample Sort:
+- Sample Sort: Will be implemented using MPI on the Grace cluster. The initial large problem array will split into multiple sub-arrays to be distributed across Grace's nodes and processors. 
 - Merge Sort: Implement using MPI on the Grace cluster, split the initial array into multiple sub-arrays to distribute across the network of nodes and processors
 - Radix Sort:
 - Column Sort:
@@ -128,6 +133,12 @@ def Merge(Array1, array1Size, Array2, array2Size) {
 
    return mergedArray
 }
+```
+
+**---Sample Sort Pseudocode---**
+```
+# sample sort pseudocode here
+
 ```
 
 ### 2c. Evaluation plan - what and how will you measure and compare
