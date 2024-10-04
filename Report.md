@@ -30,14 +30,14 @@ We will be using Discord for our team communications.
 - Sample Sort: Will be implemented using MPI on the Grace cluster. The initial large problem array will split into multiple sub-arrays to be distributed across Grace's nodes and processors. 
 - Merge Sort: Implement using MPI on the Grace cluster, split the initial array into multiple sub-arrays to distribute across the network of nodes and processors
 - Radix Sort:
-- Column Sort:
+- Column Sort: A parallel sorting algorithm that is well suited for sorting data arranged in a 2D grid. The matrix is sorted column-wise, transposed, and sorted again row-wise. This process is repeated until the matrix is sorted. This algorithm will be implemented using MPI on the Grace cluster.
 
 ### 2b. Pseudocode for each parallel algorithm
 - For MPI programs, include MPI calls you will use to coordinate between processes
 
 **---Merge Sort Pseudocode---**
 
-```
+```c++
 # Full sorting algorithm
 def MergeSort(Array, arraySize) {
    MPI_Init(arguments to set up mpi)
@@ -141,6 +141,106 @@ def Merge(Array1, array1Size, Array2, array2Size) {
 
 ```
 
+**---Column Sort Pseudocode---**
+```
+Steps:
+ 1: Arrange data in a matrix with r rows and c columns, where r is the number of processors and c is the numner of items per process.
+ 2: Sort each column using a sequential sorting algorithm (may change algorithm depending on input size).
+ 3: Transpose the matrix.
+ 4: Sort each row independently
+ 5: Sort each column again.
+ 6: Tranpose the matrix.
+ 7: Final column sort.
+```
+```c++
+/*
+* Include MPI header
+* Include Caliper header
+* Include any additional headers
+* Define Constants (MASTER)
+*/
+
+int main(int argc, char *argv[]) {
+   CALI_CXX_MARK_FUNCTION;
+
+   if args invalid return 0;
+
+   // Set up MPI environment (needs to include arguments)
+   MPI_INIT();
+   MPI_Comm_rank()
+   MPI_Comm_size()
+
+   // Initialize variables
+   int N = atoi(argv[1])
+   int P = num processors;
+   int rows, N_padded, padding_size;
+
+   // To handle cases where the total number of data elements isn't divisible by the number of processors
+   // Example: N = 10 and P = 4:
+   // rows = (10 + 4 - 1) / 4 = 3
+   // N_padded = 3 * 4 = 12 (what it will be when padded)
+   // padding_size = 12 - 10 = 2 (num of padding elements)
+   rows = (N + P - 1) / P;
+   N_padded = rows * P;
+   padding_size = N_padded - N;
+
+   // Local data for each processor
+   int *local_array = (int*)malloc(rows * sizeof(int));
+
+   if (taskid == MASTER) {
+      int *global_data = (int*)malloc(N_padded * sizeof(int));
+      
+      /* Add actual data to global_data */
+
+      /* Add padded data */
+      for (int i = N; i < N_padded; ++i) {
+         global_data[i] = INT_MAX;
+      }
+
+      for (int p = 0; p < P; ++p) {
+         if (p == MASTER) {
+            // copy local data to global data
+         } else {
+            // MPI_Send
+         }
+      }
+      free(global_data)
+   } else {
+      // MPI_Recv
+   }
+
+   /* local column sort, marked with caliper */
+
+   /* transpose, marked with caliper */
+
+   /* lcaol row sort, marked with caliper */
+
+   /* transpose, marked with caliper */
+
+   /* local column sort, marked with caliper */
+
+   if (taskid == MASTER) {
+      int *sorted_data = (int*)malloc(N * sizeof(int));
+      // copy local_data into sorted_data
+
+      foreach p = 1; p < column, MPI_Recv(sorted_data[p*rows],rows,MPI_INIT,p,0,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
+
+      // Verify that array is sorted
+
+      free(sorted_data);
+   } else {
+      MPI_SNED(local_data, rows, MPI_INT, MASTER, 0, MPI_COMM_WORLD);
+   }
+
+   free(local_data);
+
+   mgr.flush();
+   MPI_Finalize();
+
+   return 0;
+}
+```
+
 ### 2c. Evaluation plan - what and how will you measure and compare
 - Evaluating with multiple process counts, the total process count should always be a power of 2 (2^n processors):
   - Processor count: 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024
@@ -149,6 +249,6 @@ def Merge(Array1, array1Size, Array2, array2Size) {
 - Adjust the following in each evaluation case to test each algorithm:
   - Input sizes, Input types:
     - Input sizes: 2^16, 2^18, 2^20, 2^22, 2^24, 2^26, 2^28
-    - Input types: Sorted, Random, Reverse sorted, 1%perturbed
+    - Input types: Sorted, Random, Reverse sorted, 1% perturbed
   - Strong scaling (same problem size, increase the number of processors/nodes)
   - Weak scaling (increase problem size, increase the number of processors)
