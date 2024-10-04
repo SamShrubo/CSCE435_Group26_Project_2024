@@ -29,7 +29,7 @@ We will be using Discord for our team communications.
 - Bitonic Sort:
 - Sample Sort: Will be implemented using MPI on the Grace cluster. The initial large problem array will split into multiple sub-arrays to be distributed across Grace's nodes and processors. 
 - Merge Sort: Implement using MPI on the Grace cluster, split the initial array into multiple sub-arrays to distribute across the network of nodes and processors
-- Radix Sort: Impleneted using MPI on Grace cluster. The inital array will be split into multiple smaller arrays across the nodes and processors
+- Radix Sort: Impleneted using MPI on Grace cluster. The inital array will be split into multiple smaller arrays across the nodes and processors, will be using least significant digit version
 - Column Sort:
 
 ### 2b. Pseudocode for each parallel algorithm
