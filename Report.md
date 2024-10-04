@@ -27,7 +27,7 @@ We will be using Discord for our team communications.
 ### 2a. Brief project description (what algorithms will you be comparing and on what architectures)
 
 - Bitonic Sort:
-- Sample Sort: Will be implemented using MPI on the Grace cluster. The initial large problem array will split into multiple sub-arrays to be distributed across Grace's nodes and processors. 
+- Sample Sort: Will be implemented using MPI on the Grace cluster. The initial large problem array will split into multiple sub-arrays to be distributed across Grace's nodes and processors. Each sub-array will be sorted using quicksort. Bucket sort will be used after samples are chosen from the sub-arrays. 
 - Merge Sort: Implement using MPI on the Grace cluster, split the initial array into multiple sub-arrays to distribute across the network of nodes and processors
 - Radix Sort: Impleneted using MPI on Grace cluster. The inital array will be split into multiple smaller arrays across the nodes and processors, will be using least significant digit version
 - Column Sort: A parallel sorting algorithm that is well suited for sorting data arranged in a 2D grid. The matrix is sorted column-wise, transposed, and sorted again row-wise. This process is repeated until the matrix is sorted. This algorithm will be implemented using MPI on the Grace cluster.
@@ -137,8 +137,86 @@ def Merge(Array1, array1Size, Array2, array2Size) {
 
 **---Sample Sort Pseudocode---**
 ```
-# sample sort pseudocode here
+// perform sample sort in parallel
+int main(int argc, char* argv[]) {
+    CALI_CXX_MARK_FUNCTION;
 
+    double total_time, time_per_process = 0.0;
+    int numtasks, taskid, N;
+    int* globalArray = NULL;
+
+    if (argc == 2) {
+        N = atoi(argv[1]);  // Get the size of the array
+    } else {
+        printf("\n Please provide the size of the array\n");
+        return 0;
+    }
+
+    MPI_Init(&argc, &argv);
+    MPI_Comm_rank(MPI_COMM_WORLD, &taskid);
+    MPI_Comm_size(MPI_COMM_WORLD, &numtasks);
+
+    int localArraySize = N / numtasks;
+    // should also handle when numtasks does not cleanly divide N
+
+    int *localArray = (int*) malloc(localArraySize * sizeof(int));
+
+    if(taskid = MASTER) { // only generate array in master process
+        globalArray = generate_input_array(N);
+    }
+
+    // START OF PARALLEL SECTION
+    double total_time_start = MPI_Wtime();
+    double process_time_start = MPI_Wtime();
+    
+    // distribute elements of array to m buckets
+    MPI_Scatter(globalArray, localArraySize, MPI_INT, localArray, localArraySize, MPI_INT, MASTER, MPI_COMM_WORLD);
+
+    // sort each local array with quicksort
+    quicksort(localArray, 0, localArraySize - 1);
+
+    // draw sample of size s
+    int sampleSize = numtasks - 1;
+    int* localSamples = select_samples(localArray, sampleSize);
+
+    // gather samples 
+    int sampleSize = numtasks - 1;
+    int* localSamples = select_samples(localArray, sampleSize);
+
+    // sort sample and select pivots
+
+    // globally broadcast pivots to all processes
+    MPI_Bcast(pivots, numtasks - 1, MPI_INT, MASTER, MPI_COMM_WORLD);
+
+    // partition local arrays into buckets based on pivots
+    
+    // exchange buckets between processes
+    
+    // sort received buckets
+
+    // END OF PARALLEL SECTION
+    double process_time_end = MPI_Wtime();
+    
+    // gather sorted subarrays back to master process
+    if(taskid == MASTER) {
+        // gather all subarrays
+        int* sortedArray = (int*)malloc(N * sizeof(int));
+        MPI_Gather(localArray, localArraySize, MPI_INT, sortedArray, localArraySize, MPI_INT, MASTER, MPI_COMM_WORLD);
+    } else {
+        MPI_Gather(localArray, localArraySize, MPI_INT, NULL, 0, MPI_INT, MASTER, MPI_COMM_WORLD);
+    }
+
+    
+    // Record total time taken
+    double total_time_end = MPI_Wtime();
+    total_time = total_time_end - total_time_start;
+    time_per_process = process_time_end - process_time_start;
+
+    // use MPI_Send and MPI_Recv to gather all of the process times
+    // (similarly to how it was done in previous labs)
+
+    MPI_Finalize();
+}
 ```
 
 **---Radix Sort Pseudocode---**
