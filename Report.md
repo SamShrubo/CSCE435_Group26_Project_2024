@@ -29,7 +29,7 @@ We will be using Discord for our team communications.
 - Bitonic Sort:
 - Sample Sort: Will be implemented using MPI on the Grace cluster. The initial large problem array will split into multiple sub-arrays to be distributed across Grace's nodes and processors. 
 - Merge Sort: Implement using MPI on the Grace cluster, split the initial array into multiple sub-arrays to distribute across the network of nodes and processors
-- Radix Sort:
+- Radix Sort: Impleneted using MPI on Grace cluster. The inital array will be split into multiple smaller arrays across the nodes and processors, will be using least significant digit version
 - Column Sort: A parallel sorting algorithm that is well suited for sorting data arranged in a 2D grid. The matrix is sorted column-wise, transposed, and sorted again row-wise. This process is repeated until the matrix is sorted. This algorithm will be implemented using MPI on the Grace cluster.
 
 ### 2b. Pseudocode for each parallel algorithm
@@ -141,6 +141,51 @@ def Merge(Array1, array1Size, Array2, array2Size) {
 
 ```
 
+**---Radix Sort Pseudocode---**
+```
+MPI_Init()
+MPI_Comm_rank(comm, rank);
+MPI_Comm_size(comm, size);
+
+// Scatter the array across processes
+if (rank == 0) {
+    int *arr = generate_input_array(N);
+    // Scatter the array to all processes
+    MPI_Scatter(variables);
+} else {
+    // Other processes
+    MPI_Scatter(variables);
+}
+
+// Perform radix sort on the local portion of the array
+
+while i < max_digits {
+    // Perform counting sort at current digit
+    int local_count = counting_sort_by_digit(local_arr, local_size, digit_pos, base);
+
+    // Gather global counts from other processes
+    MPI_Allgather(local_count, base, MPI_INT, global_count, base, MPI_INT, comm);
+    
+    // Compute prefix sums on global counts to determine offsets
+    int prefix_sum = compute_prefix_sums(global_count, base);
+    
+    // Redistribute elements based on the computed prefix sums
+    int sorted_local_arr = redistribute_elements(local_arr, local_size, digit_pos, prefix_sum, base);
+
+    // Replace local array with the newly sorted portion
+    local_arr = sorted_local_arr;
+}
+
+// Gather the locally sorted arrays back into the root process
+if (rank == 0) {
+    MPI_Gather(local_arr, local_size, MPI_INT, sorted_arr, local_size, MPI_INT, 0, MPI_COMM_WORLD);
+} else {
+    MPI_Gather(local_arr, local_size, MPI_INT, NULL, local_size, MPI_INT, 0, MPI_COMM_WORLD);
+}
+MPI_Finalize();
+
+```
+
 **---Column Sort Pseudocode---**
 ```
 Steps:
@@ -240,7 +285,6 @@ int main(int argc, char *argv[]) {
    return 0;
 }
 ```
-
 ### 2c. Evaluation plan - what and how will you measure and compare
 - Evaluating with multiple process counts, the total process count should always be a power of 2 (2^n processors):
   - Processor count: 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024
