@@ -131,12 +131,13 @@ def Merge(Array1, array1Size, Array2, array2Size) {
 ```
 
 ### 2c. Evaluation plan - what and how will you measure and compare
-- Evaluating with multiple process counts, the total process count should always be a power of 2 (2^n processors)
+- Evaluating with multiple process counts, the total process count should always be a power of 2 (2^n processors):
+  - Processor count: 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024
 - Using Caliper + thicket to calculate the total time taken, time per process, etc, for each algorithm with the same inputs and processor count across each
   - This method can allow us to determine which algorithms are fastest in what input context
 - Adjust the following in each evaluation case to test each algorithm:
   - Input sizes, Input types:
-    - Optimal inputs (size is a power of 2) or is divisible by process count
-    - Sub-optimal inputs (size is not a power of 2) or is not divisible by process count
+    - Input sizes: 2^16, 2^18, 2^20, 2^22, 2^24, 2^26, 2^28
+    - Input types: Sorted, Random, Reverse sorted, 1%perturbed
   - Strong scaling (same problem size, increase the number of processors/nodes)
   - Weak scaling (increase problem size, increase the number of processors)
