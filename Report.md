@@ -70,10 +70,11 @@ def MergeSort(Array, arraySize) {
    
             # Merge local array and received array using helper function defined below
             localArray = Merge(localArray, localArraySize, receivedArray, receivedSize)
-            localArraySize = localArraySize + receivedSize  // Update local size after merge
+            # Update local size after merge
+            localArraySize = localArraySize + receivedSize  
    
       elif (rank % step == 0):
-         // Send local array to neighboring process
+         # Send local array to neighboring process
          MPI_Send(localArray, localArraySize, MPI_INT, rank - step, 0, MPI_COMM_WORLD)
 
       # double step size each iteration
