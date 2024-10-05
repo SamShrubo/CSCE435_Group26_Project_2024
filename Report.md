@@ -26,7 +26,7 @@ We will be using Discord for our team communications.
 
 ### 2a. Brief project description (what algorithms will you be comparing and on what architectures)
 
-- Bitonic Sort:
+- Bitonic Sort: A sorting algorithm that scales well with parallel computing architecture. The algorithm requires the array to be size of 2^n where n is a positive integer value. It process the array recursively as subarrays and sort them into bitonic arrays. It will be implemented on the Grace Cluster using MPI.
 - Sample Sort: Will be implemented using MPI on the Grace cluster. The initial large problem array will split into multiple sub-arrays to be distributed across Grace's nodes and processors. Each sub-array will be sorted using quicksort. Bucket sort will be used after samples are chosen from the sub-arrays. 
 - Merge Sort: Implement using MPI on the Grace cluster, split the initial array into multiple sub-arrays to distribute across the network of nodes and processors
 - Radix Sort: Impleneted using MPI on Grace cluster. The inital array will be split into multiple smaller arrays across the nodes and processors, will be using least significant digit version
@@ -362,6 +362,67 @@ int main(int argc, char *argv[]) {
 
    return 0;
 }
+```
+
+**---Bitonic Sort Pseudocode---**
+```c++
+swap(int* i, int* j, int direction):
+   if direction == *i > *j:
+      temp = *i
+      i = *j
+      *j = temp
+
+merge(int start, int length, int array[], int direction):
+   half = length / 2
+   if(length > 1):
+      for(int i = start, half):
+         swap(array[i], array[i] + half, direction)
+      merge(start, length, array, direction)
+
+master_bitonic(int start, int length, int array[], int direction, int min):
+   if length > min:
+      int half = length/2
+      master_bitonic(start, half, array, 1, min)
+      master_bitonic(start + half, half, array, 0, min)
+      merge(start, length, array, direction)
+
+bitonic(int start, int length, int array[], int direction):
+   if length > 1:
+      int half = length/2
+      bitonic(start, half, array, 1)
+      bitonic(start + half, half, array, 0)
+      merge(start, length, array, direction)
+
+main():
+   MPI_init()
+   rank = MPI_Comm_rank()
+   size = MPI_Comm_size()
+   
+
+   if(rank == MASTER): // Master process
+      array = input()
+      portion =  array.size / size
+
+      for(int i = 0, size):
+         MPI_SEND(buf: portion, dest: i) // Tell worker size of their portion
+         MPI_SEND(buf: array.sub(i * portion, (i+1) * portion), dest: i) // Send worker their portion
+      
+      for(int i = 0, size):
+         MPI_RECV(buf: array + i*(portion), count: portion, source: i)
+
+      master_bitonic(0, size, array, 1, portion)    // Combine worker's array with a partial bitonic  
+
+   else : // Worker process
+      size
+      array
+      MPI_RECV(buf: size, count: 1, source: MASTER) // Get size of portion
+      MPI_RECV(buf: array, count: size, source: MASTER) // Get portion
+      bitonic(0, size, array, i % 2) // Sort incre/desc based on worker index
+
+      MPI_SEND(buf: array, dest: MASTER) // Send sorted sub array to master
+      
+
+
 ```
 ### 2c. Evaluation plan - what and how will you measure and compare
 - Evaluating with multiple process counts, the total process count should always be a power of 2 (2^n processors):
