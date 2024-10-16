@@ -19,57 +19,85 @@ using std::vector;
 #define FROM_MASTER 1          /* setting a message type */
 #define FROM_WORKER 2          /* setting a message type */
 
-boolean correctness_check(int *array, int size) {
+bool correctness_check(int *array, int size) {
     for(int i = 0; i < size-1; i++) {
         if(array[i] > array[i + 1]) {
             return false;
         }
-        return true;
     }
+    return true;
 }
 
 // need a function to create array depending on the type of input and size
 // Input sizes: 2^16, 2^18, 2^20, 2^22, 2^24, 2^26, 2^28
 // Input types: Sorted, Random, Reverse sorted, 1% perturbed
-void create_input(vector<int> &localArray, int input_type){
+void create_input(int *localArray, int local_size, int input_type, int rank){
     if(input_type == 0) { // sorted
-        create_sorted_array(localArray);
+        create_sorted_array(localArray, rank, local_size);
     } else if (input_type == 1) { // random
-        create_random_array(localArray);
+        create_random_array(localArray, local_size);
     } else if (input_type == 2) { // reverse sorted
-        create_reverse_sorted(localArray);
+        create_reverse_sorted(localArray, rank, local_size);
     } else if (input_type == 3) { // 1% perturbed
-        create_one_percent_perturbed(localArray);
+        create_one_percent_perturbed(localArray, rank, local_size);
     }
 }
 
-void create_sorted_array(vector<int> &localArray){
-    for(int i = 0; i < localArray.size(); i++){
-        localArray[i] = i;
+void create_sorted_array(int *localArray, int rank, int local_size){
+    int start = rank * local_size;
+    for(int i = 0; i < local_size; i++) {
+        localArray[i] = start + i;
     }
 }
 
-void create_random_array(vector<int> &localArray){
-    for(int i = 0; i < localArray.size(); i++) {
+void create_random_array(int *localArray, int local_size){
+    for(int i = 0; i < local_size; i++) {
         localArray[i] = std::rand();
     }
 }
 
-void create_reverse_sorted(vector<int> &localArray){
-    for(int i = 0; i < localArray.size(); i++) {
-        localArray[i] = localArray.size() - i;
+void create_reverse_sorted(int *localArray, int rank, int local_size){
+    int start = rank * local_size;
+    for(int i = 0; i < local_size; i++) {
+        localArray[i] = start + (local_size - i - 1);
     }
 }
 
-void create_one_percent_perturbed(vector<int> &localArray){
-    create_sorted_array(localArray);
+void create_one_percent_perturbed(int *localArray, int rank, int local_size){
+    create_sorted_array(localArray, rank, local_size);
     // perturb the array
-    int num_to_perturb = (int)(std::round(localArray.size() * 0.01));
+    int num_to_perturb = (int)(std::round(local_size * 0.01));
     if(num_to_perturb == 0) { // ensure array will always be perturbed in some way
         num_to_perturb = 1;
     }
     for(int i = 0; i < num_to_perturb; i++) {
-        std::swap(localArray[rand() % localArray.size()], localArray[rand() % localArray.size()]);
+        std::swap(localArray[rand() % local_size], localArray[rand() % local_size]);
+    }
+}
+
+// referenced from https://www.geeksforgeeks.org/cpp-program-for-quicksort/
+// with slight adjustments to use an int array instead of vector<int>
+int partition(int* arr, int low, int high){
+    int pivot = vec[high];
+    int i = (low - 1);
+    for (int j = low; j <= high - 1; j++) {
+        if (vec[j] <= pivot) {
+            i++;
+            swap(vec[i], vec[j]);
+        }
+    }
+    swap(vec[i + 1], vec[high]);
+    return (i + 1);
+}
+
+// referenced from https://www.geeksforgeeks.org/cpp-program-for-quicksort/
+// with slight adjustments to use an int array instead of vector<int>
+void quicksort(int *localArray, int low, int high) {
+    if(low < high) {
+        int pi = partition(localArray, low, high);
+
+        quicksort(localArray, low, pi-1);
+        quicksort(localArray, pi+1, high);
     }
 }
 
@@ -153,26 +181,63 @@ int main(int argc, char* argv[]) {
     cali::ConfigManager mgr;
     mgr.start();
 
-    //// required region annotation
+    // START OF PARALLEL SECTION
+    double total_time_start = MPI_Wtime();
+    double process_time_start = MPI_Wtime();
+
     // data_init_runtime start
     CALI_MARK_BEGIN("data_init_runtime");
+    int local_size = array_size / numtasks;
+    int* localArray = new int[local_size];
 
-    int localArraySize = N / numtasks;
-    if(N % numtasks != 0) {
-        // TODO: should also handle when numtasks does not cleanly divide N
-    
-    }
-
+    // distribute elements of array to m buckets
     // generate arrays in each process
-        // create_input function call
+    create_input(localArray, local_size, inputType, taskid);
 
     // end data_init_runtime
     CALI_MARK_END("data_init_runtime");
 
-    // START OF PARALLEL SECTION
-    double total_time_start = MPI_Wtime();
-    double process_time_start = MPI_Wtime();
+    // sort each local array with quicksort
+    CALI_MARK_BEGIN("comp");
+    CALI_MARK_BEGIN("comp_small"); 
+    // using small computation because only the local arrays are involved
+    quicksort(localArray, 0, local_size-1);
+    CALI_MARK_END("comp_small");
+    CALI_MARK_END("comp")
     
+    // draw sample of size s
+    int sample_size = num_procs - 1;
+    int* local_sample = new int[sample_size];
+    for(int i = 1; i <= sample_size; i++) {
+        // choosing evenly spaced samples from throughout the local array
+        local_sample[i-1] = localArray[(i) * local_size / (sample_size)];
+    }
+
+    // gather all samples in master 
+    CALI_MARK_BEGIN("comm");
+    CALI_MARK_BEGIN("comm_small");
+    MPI_Gather(local_samples, sample_size, MPI_INT, gathered_samples, sample_size, MPI_INT, MASTER, MPI_COMM_WORLD);
+    CALI_MARK_BEGIN("comm");
+    CALI_MARK_BEGIN("comm_small");
+
+    // master sorts sample and selects m-1 elements to be splitters
+    int* splitters = new int[sample_size];
+    if(rank == MASTER){
+        quicksort(gathered_samples, 0, sample_size * num_procs - 1);
+        for(int i = 1; i < num_procs; i++) {
+            splitters[i-1] = gathered_samples[i * sample_size];
+        }
+    }
+
+    // globally broadcast splitters to all processes
+    CALI_MARK_BEGIN("comm");
+    CALI_MARK_BEGIN("comm_small");
+    // using small computation because only the local arrays are involved
+    MPI_Bcast(splitters, sample_size, MPI_INT, MASTER, MPI_COMM_WORLD);
+    CALI_MARK_END("comm_small");
+    CALI_MARK_END("comm");
+    
+
     /* 
     from slides:
         Sample sort is used when uniformly distributed assumption is not true
@@ -182,21 +247,11 @@ int main(int argc, char* argv[]) {
             Split into m buckets and proceed with bucket sort
     */
 
-    // distribute elements of array to m buckets
-   
-    // sort each local array with quicksort
+    // TODO: partition local arrays into buckets based on splitters
     
-    // draw sample of size s
+    // TODO: exchange buckets between processes
     
-    // sort sample and select pivots
-
-    // globally broadcast pivots to all processes
-    
-    // partition local arrays into buckets based on pivots
-    
-    // exchange buckets between processes
-    
-    // sort received buckets
+    // TODO: sort received buckets
 
     // END OF PARALLEL SECTION
     double process_time_end = MPI_Wtime();
@@ -215,20 +270,21 @@ int main(int argc, char* argv[]) {
     total_time = total_time_end - total_time_start;
     time_per_process = process_time_end - process_time_start;
 
-    // use MPI_Send and MPI_Recv to gather all of the process times
-    // (similarly to how it was done in previous labs)
-
-    // correctness_check start
-    CALI_MARK_BEGIN("correctness_check");
-        // TODO: call correctness_check
-    bool correct_check = false; //TODO: replace with global array  
-    if(correct_check) {// if true, sorting worked
-        printf("\nSamplesort was successful.\n");
-    } else { // if false, sorting was not successful
-        printf("\nSamplesort was NOT successful.\n");
+    bool correct_check = true;
+    if(rank == MASTER) {
+        // correctness_check start
+        CALI_MARK_BEGIN("correctness_check");
+            // TODO: call correctness_check
+        correct_check = correctness_check(sortedArray, array_size);  
+        if(correct_check) { // if true, sorting worked
+            printf("\nSamplesort was successful.\n");
+        } else { // if false, sorting was not successful
+            printf("\nSamplesort was NOT successful.\n");
+        }
+        // end correctness_check
+        CALI_MARK_END("correctness_check");
     }
-    // end correctness_check
-    CALI_MARK_END("correctness_check");
+    
 
     // required adiak code
     adiak::init(NULL);
