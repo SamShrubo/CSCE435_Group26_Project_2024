@@ -8,12 +8,13 @@
 #include <limits.h>
 #include <math.h>
 #include <algorithm>
+#include <string>
 
 #include <caliper/cali.h>
 #include <caliper/cali-manager.h>
 #include <adiak.hpp>
 
-using std::vector;
+using std::vector, std::swap, std::string;
 
 #define MASTER 0               /* taskid of first task */
 #define FROM_MASTER 1          /* setting a message type */
@@ -26,21 +27,6 @@ bool correctness_check(int *array, int size) {
         }
     }
     return true;
-}
-
-// need a function to create array depending on the type of input and size
-// Input sizes: 2^16, 2^18, 2^20, 2^22, 2^24, 2^26, 2^28
-// Input types: Sorted, Random, Reverse sorted, 1% perturbed
-void create_input(int *localArray, int local_size, int input_type, int rank){
-    if(input_type == 0) { // sorted
-        create_sorted_array(localArray, rank, local_size);
-    } else if (input_type == 1) { // random
-        create_random_array(localArray, local_size);
-    } else if (input_type == 2) { // reverse sorted
-        create_reverse_sorted(localArray, rank, local_size);
-    } else if (input_type == 3) { // 1% perturbed
-        create_one_percent_perturbed(localArray, rank, local_size);
-    }
 }
 
 void create_sorted_array(int *localArray, int rank, int local_size){
@@ -75,18 +61,33 @@ void create_one_percent_perturbed(int *localArray, int rank, int local_size){
     }
 }
 
+// need a function to create array depending on the type of input and size
+// Input sizes: 2^16, 2^18, 2^20, 2^22, 2^24, 2^26, 2^28
+// Input types: Sorted, Random, Reverse sorted, 1% perturbed
+void create_input(int *localArray, int local_size, int input_type, int rank){
+    if(input_type == 0) { // sorted
+        create_sorted_array(localArray, rank, local_size);
+    } else if (input_type == 1) { // random
+        create_random_array(localArray, local_size);
+    } else if (input_type == 2) { // reverse sorted
+        create_reverse_sorted(localArray, rank, local_size);
+    } else if (input_type == 3) { // 1% perturbed
+        create_one_percent_perturbed(localArray, rank, local_size);
+    }
+}
+
 // referenced from https://www.geeksforgeeks.org/cpp-program-for-quicksort/
 // with slight adjustments to use an int array instead of vector<int>
 int partition(int* arr, int low, int high){
-    int pivot = vec[high];
+    int pivot = arr[high];
     int i = (low - 1);
     for (int j = low; j <= high - 1; j++) {
-        if (vec[j] <= pivot) {
+        if (arr[j] <= pivot) {
             i++;
-            swap(vec[i], vec[j]);
+            std::swap(arr[i], arr[j]);
         }
     }
-    swap(vec[i + 1], vec[high]);
+    std::swap(arr[i + 1], arr[high]);
     return (i + 1);
 }
 
@@ -135,25 +136,20 @@ int main(int argc, char* argv[]) {
     }
 
     // variable creation
-    double 
-        total_time, 
-        time_per_process = 0.0;
     int 
         numtasks, 
         taskid;
-    int* 
-        globalArray = NULL;
 
     // adiak variables
     string 
         algorithm = "samplesort",
         programming_model = "mpi",
-        datatype = "int",
+        data_type = "int",
         input_type, // choices: "Sorted", "Random", "Reverse sorted", "1% perturbed"
-        scalability, // choices: "weak", "strong"
-        implementation_source; // choices: ("online", "ai", "handwritten")
+        scalability = "strong", // choices: "weak", "strong"
+        implementation_source = "temp //TOCHANGE"; // choices: ("online", "ai", "handwritten")
     int 
-        group_num = 26,
+        group_number = 26,
         size_of_data_type = sizeof(int),
         input_size = array_size,
         num_procs; // number of processors (MPI ranks)
@@ -182,8 +178,6 @@ int main(int argc, char* argv[]) {
     mgr.start();
 
     // START OF PARALLEL SECTION
-    double total_time_start = MPI_Wtime();
-    double process_time_start = MPI_Wtime();
 
     // data_init_runtime start
     CALI_MARK_BEGIN("data_init_runtime");
@@ -203,29 +197,34 @@ int main(int argc, char* argv[]) {
     // using small computation because only the local arrays are involved
     quicksort(localArray, 0, local_size-1);
     CALI_MARK_END("comp_small");
-    CALI_MARK_END("comp")
+    CALI_MARK_END("comp");
     
     // draw sample of size s
     int sample_size = num_procs - 1;
     int* local_sample = new int[sample_size];
-    for(int i = 1; i <= sample_size; i++) {
+    for(int i = 0; i < sample_size; i++) {
+        int index = ((i+1) * local_size) / (sample_size + 1);
         // choosing evenly spaced samples from throughout the local array
-        local_sample[i-1] = localArray[(i) * local_size / (sample_size)];
+        local_sample[i] = localArray[index];
     }
 
     // gather all samples in master 
+    int* gathered_sample = NULL;
+    if(taskid == MASTER){
+        gathered_sample = new int[sample_size * num_procs];
+    }
     CALI_MARK_BEGIN("comm");
     CALI_MARK_BEGIN("comm_small");
-    MPI_Gather(local_samples, sample_size, MPI_INT, gathered_samples, sample_size, MPI_INT, MASTER, MPI_COMM_WORLD);
+    MPI_Gather(local_sample, sample_size, MPI_INT, gathered_sample, sample_size, MPI_INT, MASTER, MPI_COMM_WORLD);
     CALI_MARK_BEGIN("comm");
     CALI_MARK_BEGIN("comm_small");
 
     // master sorts sample and selects m-1 elements to be splitters
     int* splitters = new int[sample_size];
-    if(rank == MASTER){
-        quicksort(gathered_samples, 0, sample_size * num_procs - 1);
+    if(taskid == MASTER){
+        quicksort(gathered_sample, 0, sample_size * num_procs - 1);
         for(int i = 1; i < num_procs; i++) {
-            splitters[i-1] = gathered_samples[i * sample_size];
+            splitters[i-1] = gathered_sample[i * sample_size];
         }
     }
 
@@ -237,7 +236,6 @@ int main(int argc, char* argv[]) {
     CALI_MARK_END("comm_small");
     CALI_MARK_END("comm");
     
-
     /* 
     from slides:
         Sample sort is used when uniformly distributed assumption is not true
@@ -248,33 +246,102 @@ int main(int argc, char* argv[]) {
     */
 
     // TODO: partition local arrays into buckets based on splitters
-    
-    // TODO: exchange buckets between processes
-    
-    // TODO: sort received buckets
-
-    // END OF PARALLEL SECTION
-    double process_time_end = MPI_Wtime();
-    
-    // gather sorted subarrays back to master process
-    if(taskid == MASTER) {
-        // gather all subarrays
-        int* sortedArray = (int*)malloc(N * sizeof(int));
-        MPI_Gather(localArray, localArraySize, MPI_INT, sortedArray, localArraySize, MPI_INT, MASTER, MPI_COMM_WORLD);
-    } else {
-        MPI_Gather(localArray, localArraySize, MPI_INT, NULL, 0, MPI_INT, MASTER, MPI_COMM_WORLD);
+    // Allocate send_counts and send_displs
+    int* send_counts = new int[num_procs]();
+    for(int i = 0; i < local_size; i++) {
+        int bucket = 0;
+        while(bucket < sample_size && localArray[i] > splitters[bucket]){
+            bucket++;
+        }
+        send_counts[bucket]++;
     }
 
-    // Record total time taken
-    double total_time_end = MPI_Wtime();
-    total_time = total_time_end - total_time_start;
-    time_per_process = process_time_end - process_time_start;
+    // Calculate send_displs
+    int* send_displs = new int[num_procs];
+    send_displs[0] = 0;
+    for(int i = 1; i < num_procs; i++) {
+        send_displs[i] = send_displs[i-1] + send_counts[i-1];
+    }
+
+    // Allocate send_buffer
+    int total_send = 0;
+    for(int i = 0; i < num_procs; i++) {
+        total_send += send_counts[i];
+    }
+    int* send_buffer = new int[total_send];
+
+    // Initialize current positions for each bucket
+    int* current_positions = new int[num_procs];
+    for(int i = 0; i < num_procs; i++) {
+        current_positions[i] = send_displs[i];
+    }
+
+    // Populate send_buffer
+    for(int i = 0; i < local_size; i++) {
+        int bucket = 0;
+        while(bucket < sample_size && localArray[i] > splitters[bucket]){
+            bucket++;
+        }
+        send_buffer[current_positions[bucket]++] = localArray[i];
+    }
+    
+    // TODO: exchange buckets between processes
+    // All-to-all communication to get recv_counts
+    int* recv_counts_array = new int[num_procs];
+    CALI_MARK_BEGIN("comm");
+    CALI_MARK_BEGIN("comm_small");
+    MPI_Alltoall(send_counts, 1, MPI_INT, recv_counts_array, 1, MPI_INT, MPI_COMM_WORLD);
+    CALI_MARK_END("comm_small");
+    CALI_MARK_END("comm");
+
+    // Calculate recv_displs and total_recv
+    int* recv_displs = new int[num_procs];
+    recv_displs[0] = 0;
+    for(int i = 1; i < num_procs; i++) {
+        recv_displs[i] = recv_displs[i-1] + recv_counts_array[i-1];
+    }
+    int total_recv = 0;
+    for(int i = 0; i < num_procs; i++) {
+        total_recv += recv_counts_array[i];
+    }
+
+    // Allocate recv_buffer
+    int* recv_buffer = new int[total_recv];
+
+    // Perform all-to-all variable communication
+    CALI_MARK_BEGIN("comm");
+    CALI_MARK_BEGIN("comm_large");
+    MPI_Alltoallv(send_buffer, send_counts, send_displs, MPI_INT,
+                 recv_buffer, recv_counts_array, recv_displs, MPI_INT,
+                 MPI_COMM_WORLD);
+    CALI_MARK_END("comm_large");
+    CALI_MARK_END("comm");
+    
+    // TODO: sort received buckets
+    CALI_MARK_BEGIN("comp");
+    CALI_MARK_BEGIN("comp_large");
+    quicksort(recv_buffer, 0, total_recv - 1);
+    CALI_MARK_END("comp_large");
+    CALI_MARK_END("comp");
+    
+    // gather sorted subarrays back to master process
+    int* sortedArray = NULL;
+    if(taskid == MASTER) {
+        sortedArray = new int[array_size];
+    }
+
+    CALI_MARK_BEGIN("comm");
+    CALI_MARK_BEGIN("comm_large");
+    // gather all subarrays
+    MPI_Gather(localArray, local_size, MPI_INT, sortedArray, local_size, MPI_INT, MASTER, MPI_COMM_WORLD);
+    CALI_MARK_END("comm");
+    CALI_MARK_END("comm_large");
 
     bool correct_check = true;
-    if(rank == MASTER) {
+    if(taskid == MASTER) {
         // correctness_check start
         CALI_MARK_BEGIN("correctness_check");
-            // TODO: call correctness_check
+        // call correctness_check
         correct_check = correctness_check(sortedArray, array_size);  
         if(correct_check) { // if true, sorting worked
             printf("\nSamplesort was successful.\n");
@@ -285,7 +352,6 @@ int main(int argc, char* argv[]) {
         CALI_MARK_END("correctness_check");
     }
     
-
     // required adiak code
     adiak::init(NULL);
     adiak::launchdate();    // launch date of the job
@@ -304,23 +370,13 @@ int main(int argc, char* argv[]) {
     adiak::value("implementation_source", implementation_source); // Where you got the source code of your algorithm. choices: ("online", "ai", "handwritten").
 
     // required performance metrics
-    double 
+    /*double 
         minimum_time_per_rank,
         maximum_time_per_rank,
         average_time_per_rank,
         total_time,
         variance_time_per_rank;
-
-    /* USE MPI_Reduce to calculate minimum, maximum and the average times for processes.
-    MPI_Reduce (&sendbuf,&recvbuf,count,datatype,op,root,comm). https://hpc-tutorials.llnl.gov/mpi/collective_communication_routines/ */
-    // use MPI_Reduce to 
-
-    if(taskid == 0) {
-        // have the master process conglomerate expected performance metrics
-
-    } else if (taskid == 1) {
-        // the worker process might do something? not sure on this yet
-    }
+    */
 
     CALI_MARK_END("main");
 
