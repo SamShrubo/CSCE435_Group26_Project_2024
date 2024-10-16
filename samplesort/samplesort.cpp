@@ -9,6 +9,7 @@
 #include <math.h>
 #include <algorithm>
 #include <string>
+#include <ctime>
 
 #include <caliper/cali.h>
 #include <caliper/cali-manager.h>
@@ -38,9 +39,10 @@ void create_sorted_array(int *localArray, int rank, int local_size){
     }
 }
 
-void create_random_array(int *localArray, int local_size){
+void create_random_array(int *localArray, int rank, int local_size){
+    std::srand(time(0) + rank);
     for(int i = 0; i < local_size; i++) {
-        localArray[i] = std::rand();
+        localArray[i] = std::rand() % RAND_MAX;
     }
 }
 
@@ -70,7 +72,7 @@ void create_input(int *localArray, int local_size, int input_type, int rank){
     if(input_type == 0) { // sorted
         create_sorted_array(localArray, rank, local_size);
     } else if (input_type == 1) { // random
-        create_random_array(localArray, local_size);
+        create_random_array(localArray, rank, local_size);
     } else if (input_type == 2) { // reverse sorted
         create_reverse_sorted(localArray, rank, local_size);
     } else if (input_type == 3) { // 1% perturbed
@@ -156,7 +158,7 @@ int main(int argc, char* argv[]) {
         data_type = "int",
         input_type, // choices: "Sorted", "Random", "Reverse sorted", "1% perturbed"
         scalability = "strong", // choices: "weak", "strong"
-        implementation_source = "temp //TOCHANGE"; // choices: ("online", "ai", "handwritten")
+        implementation_source = "AI (ChatGPT) and Online (Class Notes, https://www.geeksforgeeks.org/cpp-program-for-quicksort/, and https://en.wikipedia.org/wiki/Samplesort#:~:text=sequential%%2C%%20sorting%%20algorithm.-,Pseudocode,-%5Bedit%%5D)"; // choices: ("online", "ai", "handwritten")
     int 
         group_number = 26,
         size_of_data_type = sizeof(int),
@@ -273,8 +275,6 @@ int main(int argc, char* argv[]) {
             splitters[i-1] = gathered_sample[sample_index];
         }
 
-        printf("After splitter selection in master\n");
-        printArray(gathered_sample, sample_size * num_procs, taskid);
     }
 
     printf("After master sorts sample on processor %d\n", taskid);
@@ -300,7 +300,7 @@ int main(int argc, char* argv[]) {
 
    printf("partition local arrays into buckets based on splitters on processor %d\n", taskid);
 
-    // TODO: partition local arrays into buckets based on splitters
+    // partition local arrays into buckets based on splitters
     // Allocate send_counts and send_displs
     int* send_counts = new int[num_procs]();
     for(int i = 0; i < local_size; i++) {
@@ -344,7 +344,7 @@ int main(int argc, char* argv[]) {
     printf("at barrier 3 on processor %d\n", taskid);
     MPI_Barrier(MPI_COMM_WORLD);
 
-    // TODO: exchange buckets between processes
+    // exchange buckets between processes
     // All-to-all communication to get recv_counts
     int* recv_counts_array = new int[num_procs];
     CALI_MARK_BEGIN("comm");
@@ -418,7 +418,6 @@ int main(int argc, char* argv[]) {
         }
         // end correctness_check
         CALI_MARK_END("correctness_check");
-        printArray(sortedArray, array_size, taskid);
     }
 
     CALI_MARK_END("main");
@@ -440,7 +439,7 @@ int main(int argc, char* argv[]) {
     adiak::value("group_num", group_number); // The number of your group (integer, e.g., 1, 10)
     adiak::value("implementation_source", implementation_source); // Where you got the source code of your algorithm. choices: ("online", "ai", "handwritten").
 
-   printf("End of main in process %d\n", taskid);
+    printf("End of main in process %d\n", taskid);
 
     mgr.stop();
     mgr.flush();
