@@ -27,9 +27,9 @@ We will be using Discord for our team communications.
 ### 2a. Brief project description (what algorithms will you be comparing and on what architectures)
 
 - Bitonic Sort: A sorting algorithm that scales well with parallel computing architecture. The algorithm requires the array to be size of 2^n where n is a positive integer value. It process the array recursively as subarrays and sort them into bitonic arrays. It will be implemented on the Grace Cluster using MPI.
-- Sample Sort: Will be implemented using MPI on the Grace cluster. The initial large problem array will split into multiple sub-arrays to be distributed across Grace's nodes and processors. Each sub-array will be sorted using quicksort. Bucket sort will be used after samples are chosen from the sub-arrays. 
+- Sample Sort: Implemented using MPI on the Grace cluster. Appropriately sized arrays will be generated on each process and sorted using quicksort. Samples are taken from each process's local array, and a sample is then taken from the set of samples. Using the final sample, array elements are sorted into buckets, rearranged, and sorted locally. All sub-arrays are conglomerated back together, resulting in a sorted large array.   
 - Merge Sort: Implement using MPI on the Grace cluster, split the initial array into multiple sub-arrays to distribute across the network of nodes and processors
-- Radix Sort: Impleneted using MPI on Grace cluster. The inital array will be split into multiple smaller arrays across the nodes and processors, will be using least significant digit version
+- Radix Sort: Implemented using MPI on Grace cluster. The inital array will be split into multiple smaller arrays across the nodes and processors, will be using least significant digit version
 - Column Sort: A parallel sorting algorithm that is well suited for sorting data arranged in a 2D grid. The matrix is sorted column-wise, transposed, and sorted again row-wise. This process is repeated until the matrix is sorted. This algorithm will be implemented using MPI on the Grace cluster.
 
 ### 2b. Pseudocode for each parallel algorithm
