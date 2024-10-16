@@ -10,12 +10,12 @@
 #include <algorithm>
 #include <string>
 #include <ctime>
+#include <random>
 
 #include <caliper/cali.h>
 #include <caliper/cali-manager.h>
 #include <adiak.hpp>
 
-using std::vector;
 using std::swap;
 using std::string;
 
@@ -65,7 +65,7 @@ void create_one_percent_perturbed(int *localArray, int rank, int local_size){
     }
 }
 
-// need a function to create array depending on the type of input and size
+// function to create array depending on the type of input and size
 // Input sizes: 2^16, 2^18, 2^20, 2^22, 2^24, 2^26, 2^28
 // Input types: Sorted, Random, Reverse sorted, 1% perturbed
 void create_input(int *localArray, int local_size, int input_type, int rank){
@@ -100,7 +100,6 @@ int partition(int* arr, int low, int high){
 void quicksort(int *localArray, int low, int high) {
     if(low < high) {
         int pi = partition(localArray, low, high);
-
         quicksort(localArray, low, pi-1);
         quicksort(localArray, pi+1, high);
     }
@@ -115,14 +114,14 @@ void printArray(int* arr, int size, int rank) {
     printf("\n");
 }
 
-// perform sample sort in parallel
+// Perform sample sort in parallel
 int main(int argc, char* argv[]) {
     CALI_CXX_MARK_FUNCTION;
 
-    // main start
+    // Main start
     CALI_MARK_BEGIN("main");
 
-    // file input should be size of array, input type, and processor count
+    // Input should be size of array (exponent) and input type
     int exponent, array_size, inputType;
     if (argc == 3) {
         // take in the size of the array x with 2^x elements
@@ -137,7 +136,7 @@ int main(int argc, char* argv[]) {
     }
 
     // input validation
-    if(exponent % 2 != 0 /*|| exponent < 16*/ || exponent > 28) {
+     if(exponent % 2 != 0 /*|| exponent < 16*/ || exponent > 28) {
         printf("\n Please provide a valid size of the array as an even number between 16 and 28, inclusive\n");
         return 0;
     } else if(inputType < 0 || inputType > 3) {
@@ -215,22 +214,20 @@ int main(int argc, char* argv[]) {
     CALI_MARK_END("comp");
 
     printf("After first quicksort on processor %d\n", taskid);
-    
+
     // draw sample of size s
-    int sample_size = num_procs - 1;
-    if(sample_size <= 0) {
-        printf("ERROR: sample size was somehow 0?? \n");
-        sample_size = 1;
-    }
+    double sampling_fraction = 0.1; // 10%
+    int sample_size = std::max(1, static_cast<int>(std::round(local_size * sampling_fraction)));
+    sample_size = std::min(sample_size, local_size); 
+
     int* local_sample = new int[sample_size];
     for(int i = 0; i < sample_size; i++) {
         int index = ((i+1) * local_size) / (sample_size + 1);
 
         if(index >= local_size) {
-            printf("ERROR: went outside of bounds while drawing sample \n");
+            printf("ERROR: went outside of bounds while drawing sample on processor %d\n", taskid);
             index = local_size - 1;
         }
-        // choosing evenly spaced samples from throughout the local array
         local_sample[i] = localArray[index];
     }
 
@@ -244,37 +241,68 @@ int main(int argc, char* argv[]) {
     if(taskid == MASTER){
         gathered_sample = new int[sample_size * num_procs];
     }
+
+    // Allocate a dummy buffer for non-master processes
+    int dummy = 0;
+
     CALI_MARK_BEGIN("comm");
     CALI_MARK_BEGIN("comm_small");
-    MPI_Gather(local_sample, sample_size, MPI_INT, gathered_sample, sample_size, MPI_INT, MASTER, MPI_COMM_WORLD);
-    
+    // Corrected MPI_Gather call with valid recvbuf for all processes
+    MPI_Gather(local_sample, sample_size, MPI_INT, 
+               (taskid == MASTER) ? gathered_sample : &dummy, 
+               sample_size, MPI_INT, MASTER, MPI_COMM_WORLD);
     CALI_MARK_END("comm_small");
     CALI_MARK_END("comm");
-
 
     printf("before master sorts sample on processor %d\n", taskid);
 
     // master sorts sample and selects m-1 elements to be splitters
-    int* splitters = new int[sample_size];
+    int* splitters = new int[num_procs - 1];
     if(taskid == MASTER){ 
-        
-        // hanging here in master
-
         // gathered_sample is of size sample_size * num_procs
-        int gathered_sample_size = (sample_size * num_procs);
-
+        int gathered_sample_size = sample_size * num_procs;
         quicksort(gathered_sample, 0, gathered_sample_size - 1);
 
         for(int i = 1; i < num_procs; i++) {
-            int sample_index = i * sample_size;
-
+            int sample_index = i * sample_size - 1; 
             if(sample_index >= gathered_sample_size) {
-                printf("ERROR: sample index out of range");
+                printf("ERROR: sample index out of range on master process.\n");
                 sample_index = gathered_sample_size - 1;
             }
             splitters[i-1] = gathered_sample[sample_index];
         }
 
+        // Optional: Print splitters for debugging
+        printf("Selected Splitters: ");
+        for(int i = 0; i < num_procs -1; i++) {
+            printf("%d ", splitters[i]);
+        }
+        printf("\n");
+
+        // Validate splitters are sorted and unique
+        bool splitters_sorted = true;
+        for(int i = 1; i < num_procs -1; i++) {
+            if(splitters[i] < splitters[i-1]){
+                splitters_sorted = false;
+                break;
+            }
+        }
+        if(!splitters_sorted){
+            printf("ERROR: Splitters are not sorted.\n");
+        }
+
+        // Check for duplicate splitters
+        bool duplicates = false;
+        for(int i = 1; i < num_procs -1; i++) {
+            if(splitters[i] == splitters[i-1]){
+                duplicates = true;
+                break;
+            }
+        }
+        if(duplicates){
+            printf("WARNING: Duplicate splitters detected.\n");
+        }
+        // TODO: handle duplicates
     }
 
     printf("After master sorts sample on processor %d\n", taskid);
@@ -285,7 +313,7 @@ int main(int argc, char* argv[]) {
     CALI_MARK_BEGIN("comm");
     CALI_MARK_BEGIN("comm_small");
     // using small computation because only the local arrays are involved
-    MPI_Bcast(splitters, sample_size, MPI_INT, MASTER, MPI_COMM_WORLD);
+    MPI_Bcast(splitters, num_procs - 1, MPI_INT, MASTER, MPI_COMM_WORLD);
     CALI_MARK_END("comm_small");
     CALI_MARK_END("comm");
     
@@ -298,14 +326,14 @@ int main(int argc, char* argv[]) {
             Split into m buckets and proceed with bucket sort
     */
 
-   printf("partition local arrays into buckets based on splitters on processor %d\n", taskid);
+    printf("partition local arrays into buckets based on splitters on processor %d\n", taskid);
 
     // partition local arrays into buckets based on splitters
     // Allocate send_counts and send_displs
     int* send_counts = new int[num_procs]();
     for(int i = 0; i < local_size; i++) {
         int bucket = 0;
-        while(bucket < sample_size && localArray[i] > splitters[bucket]){
+        while(bucket < (num_procs -1) && localArray[i] > splitters[bucket]){
             bucket++;
         }
         send_counts[bucket]++;
@@ -334,7 +362,7 @@ int main(int argc, char* argv[]) {
     // Populate send_buffer
     for(int i = 0; i < local_size; i++) {
         int bucket = 0;
-        while(bucket < sample_size && localArray[i] > splitters[bucket]){
+        while(bucket < (num_procs - 1) && localArray[i] > splitters[bucket]){
             bucket++;
         }
         send_buffer[current_positions[bucket]++] = localArray[i];
@@ -389,8 +417,28 @@ int main(int argc, char* argv[]) {
     CALI_MARK_END("comp");
 
     printf("Gather sorted subarrays back to master process %d\n", taskid);
-    
+
     // gather sorted subarrays back to master process
+    int* recv_counts_gathered = NULL;
+    int* recv_displs_gathered = NULL;
+    if(taskid == MASTER){
+        recv_counts_gathered = new int[num_procs];
+    }
+
+    CALI_MARK_BEGIN("comm");
+    CALI_MARK_BEGIN("comm_large");
+    MPI_Gather(&total_recv, 1, MPI_INT, recv_counts_gathered, 1, MPI_INT, MASTER, MPI_COMM_WORLD);
+    CALI_MARK_END("comm_large");
+    CALI_MARK_END("comm");
+
+    if(taskid == MASTER){
+        recv_displs_gathered = new int[num_procs];
+        recv_displs_gathered[0] = 0;
+        for(int i = 1; i < num_procs; i++) {
+            recv_displs_gathered[i] = recv_displs_gathered[i-1] + recv_counts_gathered[i-1];
+        }
+    }
+
     int* sortedArray = NULL;
     if(taskid == MASTER) {
         sortedArray = new int[array_size];
@@ -398,13 +446,14 @@ int main(int argc, char* argv[]) {
 
     CALI_MARK_BEGIN("comm");
     CALI_MARK_BEGIN("comm_large");
-    // gather all subarrays
-    MPI_Gather(localArray, local_size, MPI_INT, sortedArray, local_size, MPI_INT, MASTER, MPI_COMM_WORLD);
+    MPI_Gatherv(recv_buffer, total_recv, MPI_INT,
+                sortedArray, recv_counts_gathered, recv_displs_gathered, MPI_INT,
+                MASTER, MPI_COMM_WORLD);
     CALI_MARK_END("comm_large");
     CALI_MARK_END("comm");
 
     printf("Subarrays gathered in process %d\n", taskid);
-    
+
     bool correct_check = true;
     if(taskid == MASTER) {
         // correctness_check start
@@ -421,8 +470,8 @@ int main(int argc, char* argv[]) {
     }
 
     CALI_MARK_END("main");
-    
-    // required adiak code
+
+    // Required adiak code
     adiak::init(NULL);
     adiak::launchdate();    // launch date of the job
     adiak::libraries();     // Libraries used
@@ -443,6 +492,26 @@ int main(int argc, char* argv[]) {
 
     mgr.stop();
     mgr.flush();
+
+    // clean up dynamically allocated memory
+    delete[] localArray;
+    delete[] local_sample;
+    if(gathered_sample){ 
+        delete[] gathered_sample;
+    }
+    delete[] splitters;
+    delete[] send_counts;
+    delete[] send_displs;
+    delete[] send_buffer;
+    delete[] current_positions;
+    delete[] recv_counts_array;
+    delete[] recv_displs;
+    delete[] recv_buffer;
+    if(taskid == MASTER){
+        delete[] recv_counts_gathered;
+        delete[] recv_displs_gathered;
+        delete[] sortedArray;
+    }
 
     MPI_Finalize();
 }
