@@ -185,6 +185,8 @@ int main(int argc, char* argv[]) {
     MPI_Comm_rank(MPI_COMM_WORLD, &taskid);
     MPI_Comm_size(MPI_COMM_WORLD, &numtasks);
 
+    num_procs = numtasks;
+
     cali::ConfigManager mgr;
     mgr.start();
 
@@ -214,9 +216,18 @@ int main(int argc, char* argv[]) {
     
     // draw sample of size s
     int sample_size = num_procs - 1;
+    if(sample_size <= 0) {
+        printf("ERROR: sample size was somehow 0?? \n");
+        sample_size = 1;
+    }
     int* local_sample = new int[sample_size];
     for(int i = 0; i < sample_size; i++) {
         int index = ((i+1) * local_size) / (sample_size + 1);
+
+        if(index >= local_size) {
+            printf("ERROR: went outside of bounds while drawing sample \n");
+            index = local_size - 1;
+        }
         // choosing evenly spaced samples from throughout the local array
         local_sample[i] = localArray[index];
     }
@@ -224,7 +235,7 @@ int main(int argc, char* argv[]) {
     printf("After sample selection on processor %d\n", taskid);
     
     
-    printf("at barrier");
+    printf("at barrier 1 on processor %d\n", taskid);
     MPI_Barrier(MPI_COMM_WORLD);
     // gather all samples in master 
     int* gathered_sample = NULL;
@@ -234,18 +245,32 @@ int main(int argc, char* argv[]) {
     CALI_MARK_BEGIN("comm");
     CALI_MARK_BEGIN("comm_small");
     MPI_Gather(local_sample, sample_size, MPI_INT, gathered_sample, sample_size, MPI_INT, MASTER, MPI_COMM_WORLD);
-    CALI_MARK_BEGIN("comm");
-    CALI_MARK_BEGIN("comm_small");
+    
+    CALI_MARK_END("comm_small");
+    CALI_MARK_END("comm");
 
 
-    printf("before master sorts sample \n");
+    printf("before master sorts sample on processor %d\n", taskid);
 
     // master sorts sample and selects m-1 elements to be splitters
     int* splitters = new int[sample_size];
-    if(taskid == MASTER){
-        quicksort(gathered_sample, 0, sample_size * num_procs - 1);
+    if(taskid == MASTER){ 
+        
+        // hanging here in master
+
+        // gathered_sample is of size sample_size * num_procs
+        int gathered_sample_size = (sample_size * num_procs);
+
+        quicksort(gathered_sample, 0, gathered_sample_size - 1);
+
         for(int i = 1; i < num_procs; i++) {
-            splitters[i-1] = gathered_sample[i * sample_size];
+            int sample_index = i * sample_size;
+
+            if(sample_index >= gathered_sample_size) {
+                printf("ERROR: sample index out of range");
+                sample_index = gathered_sample_size - 1;
+            }
+            splitters[i-1] = gathered_sample[sample_index];
         }
 
         printf("After splitter selection in master\n");
@@ -253,6 +278,8 @@ int main(int argc, char* argv[]) {
     }
 
     printf("After master sorts sample on processor %d\n", taskid);
+    printf("at barrier 2 on processor %d\n", taskid);
+    MPI_Barrier(MPI_COMM_WORLD);
 
     // globally broadcast splitters to all processes
     CALI_MARK_BEGIN("comm");
@@ -314,6 +341,8 @@ int main(int argc, char* argv[]) {
     }
 
     printf("Right before exchange buckets between processes in process %d\n", taskid);
+    printf("at barrier 3 on processor %d\n", taskid);
+    MPI_Barrier(MPI_COMM_WORLD);
 
     // TODO: exchange buckets between processes
     // All-to-all communication to get recv_counts
@@ -338,6 +367,9 @@ int main(int argc, char* argv[]) {
     // Allocate recv_buffer
     int* recv_buffer = new int[total_recv];
 
+    printf("at barrier 4 on processor %d\n", taskid);
+    MPI_Barrier(MPI_COMM_WORLD);
+
     // Perform all-to-all variable communication
     CALI_MARK_BEGIN("comm");
     CALI_MARK_BEGIN("comm_large");
@@ -349,7 +381,7 @@ int main(int argc, char* argv[]) {
 
     printf("Sort received buckets in process %d\n", taskid);
     
-    // TODO: sort received buckets
+    // sort received buckets
     CALI_MARK_BEGIN("comp");
     CALI_MARK_BEGIN("comp_large");
     quicksort(recv_buffer, 0, total_recv - 1);
@@ -368,8 +400,8 @@ int main(int argc, char* argv[]) {
     CALI_MARK_BEGIN("comm_large");
     // gather all subarrays
     MPI_Gather(localArray, local_size, MPI_INT, sortedArray, local_size, MPI_INT, MASTER, MPI_COMM_WORLD);
-    CALI_MARK_END("comm");
     CALI_MARK_END("comm_large");
+    CALI_MARK_END("comm");
 
     printf("Subarrays gathered in process %d\n", taskid);
     
@@ -388,6 +420,8 @@ int main(int argc, char* argv[]) {
         CALI_MARK_END("correctness_check");
         printArray(sortedArray, array_size, taskid);
     }
+
+    CALI_MARK_END("main");
     
     // required adiak code
     adiak::init(NULL);
@@ -406,18 +440,7 @@ int main(int argc, char* argv[]) {
     adiak::value("group_num", group_number); // The number of your group (integer, e.g., 1, 10)
     adiak::value("implementation_source", implementation_source); // Where you got the source code of your algorithm. choices: ("online", "ai", "handwritten").
 
-    // required performance metrics
-    /*double 
-        minimum_time_per_rank,
-        maximum_time_per_rank,
-        average_time_per_rank,
-        total_time,
-        variance_time_per_rank;
-    */
-
    printf("End of main in process %d\n", taskid);
-
-    CALI_MARK_END("main");
 
     mgr.stop();
     mgr.flush();
