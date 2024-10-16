@@ -371,13 +371,13 @@ int main(int argc, char* argv[]) {
     int* recv_buffer = new int[total_recv];
 
     // Perform all-to-all variable communication  
-    CALI_MARK_BEGIN("comm_large");
+    CALI_MARK_BEGIN("comm_small");
     CALI_MARK_BEGIN("MPI_Alltoallv");
     MPI_Alltoallv(send_buffer, send_counts, send_displs, MPI_INT,
                  recv_buffer, recv_counts_array, recv_displs, MPI_INT,
                  MPI_COMM_WORLD);
     CALI_MARK_END("MPI_Alltoallv");
-    CALI_MARK_END("comm_large");
+    CALI_MARK_END("comm_small");
     CALI_MARK_END("comm");
 
     // sort received buckets
