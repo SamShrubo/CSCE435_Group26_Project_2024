@@ -182,9 +182,17 @@ int main(int argc, char* argv[]) {
     // Processor counts: 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024
 
     // offical start of program
+    CALI_MARK_BEGIN("MPI_Init");
     MPI_Init(&argc, &argv);
+    CALI_MARK_END("MPI_Init");
+
+    CALI_MARK_BEGIN("MPI_Comm_rank");
     MPI_Comm_rank(MPI_COMM_WORLD, &taskid);
+    CALI_MARK_END("MPI_Comm_rank");
+
+    CALI_MARK_BEGIN("MPI_Comm_size");
     MPI_Comm_size(MPI_COMM_WORLD, &numtasks);
+    CALI_MARK_END("MPI_Comm_size");
 
     num_procs = numtasks;
 
@@ -208,15 +216,14 @@ int main(int argc, char* argv[]) {
     // sort each local array with quicksort
     CALI_MARK_BEGIN("comp");
     CALI_MARK_BEGIN("comp_small"); 
-    // using small computation because only the local arrays are involved
+    // using small computation because only local arrays are involved
     quicksort(localArray, 0, local_size-1);
     CALI_MARK_END("comp_small");
-    CALI_MARK_END("comp");
-
-    printf("After first quicksort on processor %d\n", taskid);
 
     // draw sample of size s
-    double sampling_fraction = 0.1; // 10%
+    CALI_MARK_BEGIN("comp_small");
+    // sample 10% of elements in each array
+    double sampling_fraction = 0.1; 
     int sample_size = std::max(1, static_cast<int>(std::round(local_size * sampling_fraction)));
     sample_size = std::min(sample_size, local_size); 
 
@@ -225,40 +232,41 @@ int main(int argc, char* argv[]) {
         int index = ((i+1) * local_size) / (sample_size + 1);
 
         if(index >= local_size) {
-            printf("ERROR: went outside of bounds while drawing sample on processor %d\n", taskid);
             index = local_size - 1;
         }
         local_sample[i] = localArray[index];
     }
+    CALI_MARK_END("comp_small");
+    CALI_MARK_END("comp");
 
-    printf("After sample selection on processor %d\n", taskid);
+    CALI_MARK_BEGIN("comm");
+    CALI_MARK_BEGIN("comm_large");
     
-    
-    printf("at barrier 1 on processor %d\n", taskid);
-    MPI_Barrier(MPI_COMM_WORLD);
     // gather all samples in master 
     int* gathered_sample = NULL;
     if(taskid == MASTER){
         gathered_sample = new int[sample_size * num_procs];
     }
 
-    // Allocate a dummy buffer for non-master processes
+    // create a dummy buffer for non-master processes
     int dummy = 0;
 
-    CALI_MARK_BEGIN("comm");
-    CALI_MARK_BEGIN("comm_small");
+    CALI_MARK_BEGIN("MPI_Gather");
     // Corrected MPI_Gather call with valid recvbuf for all processes
     MPI_Gather(local_sample, sample_size, MPI_INT, 
                (taskid == MASTER) ? gathered_sample : &dummy, 
                sample_size, MPI_INT, MASTER, MPI_COMM_WORLD);
-    CALI_MARK_END("comm_small");
+    CALI_MARK_END("MPI_Gather");
+
+    CALI_MARK_END("comm_large");
     CALI_MARK_END("comm");
 
-    printf("before master sorts sample on processor %d\n", taskid);
+    CALI_MARK_BEGIN("comp");
 
     // master sorts sample and selects m-1 elements to be splitters
     int* splitters = new int[num_procs - 1];
     if(taskid == MASTER){ 
+        CALI_MARK_BEGIN("comp_small");
         // gathered_sample is of size sample_size * num_procs
         int gathered_sample_size = sample_size * num_procs;
         quicksort(gathered_sample, 0, gathered_sample_size - 1);
@@ -272,62 +280,21 @@ int main(int argc, char* argv[]) {
             splitters[i-1] = gathered_sample[sample_index];
         }
 
-        // Optional: Print splitters for debugging
-        printf("Selected Splitters: ");
-        for(int i = 0; i < num_procs -1; i++) {
-            printf("%d ", splitters[i]);
-        }
-        printf("\n");
-
-        // Validate splitters are sorted and unique
-        bool splitters_sorted = true;
-        for(int i = 1; i < num_procs -1; i++) {
-            if(splitters[i] < splitters[i-1]){
-                splitters_sorted = false;
-                break;
-            }
-        }
-        if(!splitters_sorted){
-            printf("ERROR: Splitters are not sorted.\n");
-        }
-
-        // Check for duplicate splitters
-        bool duplicates = false;
-        for(int i = 1; i < num_procs -1; i++) {
-            if(splitters[i] == splitters[i-1]){
-                duplicates = true;
-                break;
-            }
-        }
-        if(duplicates){
-            printf("WARNING: Duplicate splitters detected.\n");
-        }
-        // TODO: handle duplicates
+        CALI_MARK_END("comp_small");
     }
 
-    printf("After master sorts sample on processor %d\n", taskid);
-    printf("at barrier 2 on processor %d\n", taskid);
-    MPI_Barrier(MPI_COMM_WORLD);
+    CALI_MARK_END("comp");
 
     // globally broadcast splitters to all processes
     CALI_MARK_BEGIN("comm");
-    CALI_MARK_BEGIN("comm_small");
-    // using small computation because only the local arrays are involved
+    CALI_MARK_BEGIN("comm_large");
+    CALI_MARK_BEGIN("MPI_Bcast");
     MPI_Bcast(splitters, num_procs - 1, MPI_INT, MASTER, MPI_COMM_WORLD);
-    CALI_MARK_END("comm_small");
+    CALI_MARK_END("MPI_Bcast");
+    CALI_MARK_END("comm_large");
     CALI_MARK_END("comm");
-    
-    /* 
-    from slides:
-        Sample sort is used when uniformly distributed assumption is not true
-            Distributed to m buckets and sort each with quicksort
-            Draw sample of size s
-            Sort samples and choose m-1 elements to be splitters
-            Split into m buckets and proceed with bucket sort
-    */
 
-    printf("partition local arrays into buckets based on splitters on processor %d\n", taskid);
-
+    CALI_MARK_BEGIN("comp");
     // partition local arrays into buckets based on splitters
     // Allocate send_counts and send_displs
     int* send_counts = new int[num_procs]();
@@ -368,18 +335,22 @@ int main(int argc, char* argv[]) {
         send_buffer[current_positions[bucket]++] = localArray[i];
     }
 
-    printf("Right before exchange buckets between processes in process %d\n", taskid);
-    printf("at barrier 3 on processor %d\n", taskid);
-    MPI_Barrier(MPI_COMM_WORLD);
+    CALI_MARK_END("comp");
+
+    CALI_MARK_BEGIN("comm");
 
     // exchange buckets between processes
     // All-to-all communication to get recv_counts
     int* recv_counts_array = new int[num_procs];
-    CALI_MARK_BEGIN("comm");
     CALI_MARK_BEGIN("comm_small");
+    CALI_MARK_BEGIN("MPI_Alltoall");
     MPI_Alltoall(send_counts, 1, MPI_INT, recv_counts_array, 1, MPI_INT, MPI_COMM_WORLD);
+    CALI_MARK_END("MPI_Alltoall");
     CALI_MARK_END("comm_small");
     CALI_MARK_END("comm");
+
+    CALI_MARK_BEGIN("comp");
+    CALI_MARK_BEGIN("comp_small");
 
     // Calculate recv_displs and total_recv
     int* recv_displs = new int[num_procs];
@@ -392,31 +363,29 @@ int main(int argc, char* argv[]) {
         total_recv += recv_counts_array[i];
     }
 
+    CALI_MARK_END("comp_small");
+    CALI_MARK_END("comp");
+
+    CALI_MARK_BEGIN("comm");
     // Allocate recv_buffer
     int* recv_buffer = new int[total_recv];
 
-    printf("at barrier 4 on processor %d\n", taskid);
-    MPI_Barrier(MPI_COMM_WORLD);
-
-    // Perform all-to-all variable communication
-    CALI_MARK_BEGIN("comm");
+    // Perform all-to-all variable communication  
     CALI_MARK_BEGIN("comm_large");
+    CALI_MARK_BEGIN("MPI_Alltoallv");
     MPI_Alltoallv(send_buffer, send_counts, send_displs, MPI_INT,
                  recv_buffer, recv_counts_array, recv_displs, MPI_INT,
                  MPI_COMM_WORLD);
+    CALI_MARK_END("MPI_Alltoallv");
     CALI_MARK_END("comm_large");
     CALI_MARK_END("comm");
 
-    printf("Sort received buckets in process %d\n", taskid);
-    
     // sort received buckets
     CALI_MARK_BEGIN("comp");
     CALI_MARK_BEGIN("comp_large");
     quicksort(recv_buffer, 0, total_recv - 1);
     CALI_MARK_END("comp_large");
     CALI_MARK_END("comp");
-
-    printf("Gather sorted subarrays back to master process %d\n", taskid);
 
     // gather sorted subarrays back to master process
     int* recv_counts_gathered = NULL;
@@ -427,7 +396,9 @@ int main(int argc, char* argv[]) {
 
     CALI_MARK_BEGIN("comm");
     CALI_MARK_BEGIN("comm_large");
+    CALI_MARK_BEGIN("MPI_Gather");
     MPI_Gather(&total_recv, 1, MPI_INT, recv_counts_gathered, 1, MPI_INT, MASTER, MPI_COMM_WORLD);
+    CALI_MARK_END("MPI_Gather");
     CALI_MARK_END("comm_large");
     CALI_MARK_END("comm");
 
@@ -445,14 +416,14 @@ int main(int argc, char* argv[]) {
     }
 
     CALI_MARK_BEGIN("comm");
-    CALI_MARK_BEGIN("comm_large");
+    CALI_MARK_BEGIN("comm_small");
+    CALI_MARK_BEGIN("MPI_Gatherv");
     MPI_Gatherv(recv_buffer, total_recv, MPI_INT,
                 sortedArray, recv_counts_gathered, recv_displs_gathered, MPI_INT,
                 MASTER, MPI_COMM_WORLD);
-    CALI_MARK_END("comm_large");
+    CALI_MARK_END("MPI_Gatherv");
+    CALI_MARK_END("comm_small");
     CALI_MARK_END("comm");
-
-    printf("Subarrays gathered in process %d\n", taskid);
 
     bool correct_check = true;
     if(taskid == MASTER) {
@@ -468,8 +439,6 @@ int main(int argc, char* argv[]) {
         // end correctness_check
         CALI_MARK_END("correctness_check");
     }
-
-    CALI_MARK_END("main");
 
     // Required adiak code
     adiak::init(NULL);
@@ -487,8 +456,6 @@ int main(int argc, char* argv[]) {
     adiak::value("scalability", scalability); // The scalability of your algorithm. choices: ("strong", "weak")
     adiak::value("group_num", group_number); // The number of your group (integer, e.g., 1, 10)
     adiak::value("implementation_source", implementation_source); // Where you got the source code of your algorithm. choices: ("online", "ai", "handwritten").
-
-    printf("End of main in process %d\n", taskid);
 
     mgr.stop();
     mgr.flush();
@@ -513,6 +480,10 @@ int main(int argc, char* argv[]) {
         delete[] sortedArray;
     }
 
+    CALI_MARK_BEGIN("MPI_Finalize");
     MPI_Finalize();
+    CALI_MARK_END("MPI_Finalize");
+
+    CALI_MARK_END("main");
 }
 // end main
