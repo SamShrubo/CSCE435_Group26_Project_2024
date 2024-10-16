@@ -14,7 +14,9 @@
 #include <caliper/cali-manager.h>
 #include <adiak.hpp>
 
-using std::vector, std::swap, std::string;
+using std::vector;
+using std::swap;
+using std::string;
 
 #define MASTER 0               /* taskid of first task */
 #define FROM_MASTER 1          /* setting a message type */
@@ -102,7 +104,14 @@ void quicksort(int *localArray, int low, int high) {
     }
 }
 
-// Processor counts: 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024
+void printArray(int* arr, int size, int rank) {
+    printf("Processor %d: \n", rank);
+    printf("size: %d\n", size);
+    for(int i = 0; i < size; i++) {
+        printf("%d ", arr[i]);
+    }
+    printf("\n");
+}
 
 // perform sample sort in parallel
 int main(int argc, char* argv[]) {
@@ -126,7 +135,7 @@ int main(int argc, char* argv[]) {
     }
 
     // input validation
-    if(exponent % 2 != 0 || exponent < 16 || exponent > 28) {
+    if(exponent % 2 != 0 /*|| exponent < 16*/ || exponent > 28) {
         printf("\n Please provide a valid size of the array as an even number between 16 and 28, inclusive\n");
         return 0;
     } else if(inputType < 0 || inputType > 3) {
@@ -169,6 +178,8 @@ int main(int argc, char* argv[]) {
             break;
     }
 
+    // Processor counts: 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024
+
     // offical start of program
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &taskid);
@@ -198,6 +209,8 @@ int main(int argc, char* argv[]) {
     quicksort(localArray, 0, local_size-1);
     CALI_MARK_END("comp_small");
     CALI_MARK_END("comp");
+
+    printf("After first quicksort on processor %d\n", taskid);
     
     // draw sample of size s
     int sample_size = num_procs - 1;
@@ -208,6 +221,11 @@ int main(int argc, char* argv[]) {
         local_sample[i] = localArray[index];
     }
 
+    printf("After sample selection on processor %d\n", taskid);
+    
+    
+    printf("at barrier");
+    MPI_Barrier(MPI_COMM_WORLD);
     // gather all samples in master 
     int* gathered_sample = NULL;
     if(taskid == MASTER){
@@ -219,6 +237,9 @@ int main(int argc, char* argv[]) {
     CALI_MARK_BEGIN("comm");
     CALI_MARK_BEGIN("comm_small");
 
+
+    printf("before master sorts sample \n");
+
     // master sorts sample and selects m-1 elements to be splitters
     int* splitters = new int[sample_size];
     if(taskid == MASTER){
@@ -226,7 +247,12 @@ int main(int argc, char* argv[]) {
         for(int i = 1; i < num_procs; i++) {
             splitters[i-1] = gathered_sample[i * sample_size];
         }
+
+        printf("After splitter selection in master\n");
+        printArray(gathered_sample, sample_size * num_procs, taskid);
     }
+
+    printf("After master sorts sample on processor %d\n", taskid);
 
     // globally broadcast splitters to all processes
     CALI_MARK_BEGIN("comm");
@@ -244,6 +270,8 @@ int main(int argc, char* argv[]) {
             Sort samples and choose m-1 elements to be splitters
             Split into m buckets and proceed with bucket sort
     */
+
+   printf("partition local arrays into buckets based on splitters on processor %d\n", taskid);
 
     // TODO: partition local arrays into buckets based on splitters
     // Allocate send_counts and send_displs
@@ -284,7 +312,9 @@ int main(int argc, char* argv[]) {
         }
         send_buffer[current_positions[bucket]++] = localArray[i];
     }
-    
+
+    printf("Right before exchange buckets between processes in process %d\n", taskid);
+
     // TODO: exchange buckets between processes
     // All-to-all communication to get recv_counts
     int* recv_counts_array = new int[num_procs];
@@ -316,6 +346,8 @@ int main(int argc, char* argv[]) {
                  MPI_COMM_WORLD);
     CALI_MARK_END("comm_large");
     CALI_MARK_END("comm");
+
+    printf("Sort received buckets in process %d\n", taskid);
     
     // TODO: sort received buckets
     CALI_MARK_BEGIN("comp");
@@ -323,6 +355,8 @@ int main(int argc, char* argv[]) {
     quicksort(recv_buffer, 0, total_recv - 1);
     CALI_MARK_END("comp_large");
     CALI_MARK_END("comp");
+
+    printf("Gather sorted subarrays back to master process %d\n", taskid);
     
     // gather sorted subarrays back to master process
     int* sortedArray = NULL;
@@ -337,6 +371,8 @@ int main(int argc, char* argv[]) {
     CALI_MARK_END("comm");
     CALI_MARK_END("comm_large");
 
+    printf("Subarrays gathered in process %d\n", taskid);
+    
     bool correct_check = true;
     if(taskid == MASTER) {
         // correctness_check start
@@ -350,6 +386,7 @@ int main(int argc, char* argv[]) {
         }
         // end correctness_check
         CALI_MARK_END("correctness_check");
+        printArray(sortedArray, array_size, taskid);
     }
     
     // required adiak code
@@ -377,6 +414,8 @@ int main(int argc, char* argv[]) {
         total_time,
         variance_time_per_rank;
     */
+
+   printf("End of main in process %d\n", taskid);
 
     CALI_MARK_END("main");
 
