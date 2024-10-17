@@ -466,46 +466,42 @@ Radix Sort Call Tree
 
 Radix Sort Metadata
 
-         cali.caliper.version  mpi.world.size  \
-profile                                          
-743475682               2.11.0              16   
-
-                                                spot.metrics  \
-profile                                                        
-743475682  min#inclusive#sum#time.duration,max#inclusive#...   
-
+``
+           cali.caliper.version  mpi.world.size  \
+profile                                           
+3298923211               2.11.0               4   
+                                                 spot.metrics  \
+profile                                                         
+3298923211  min#inclusive#sum#time.duration,max#inclusive#...   
           spot.timeseries.metrics  spot.format.version  \
-profile                                                  
-743475682                                            2   
+profile                                                   
+3298923211                                            2   
 
-                                     spot.options  spot.channels cali.channel  \
-profile                                                                         
-743475682  node.order,region.count,time.exclusive  regionprofile         spot   
-
-          spot:node.order                      spot:output spot:region.count  \
+                                                 spot.options  spot.channels  \
 profile                                                                        
-743475682            true  cali-samp-262144-p16-type1.cali              true   
+3298923211  time.variance,profile.mpi,node.order,region.co...  regionprofile   
 
-          spot:time.exclusive  launchdate  \
-profile                                     
-743475682                true  1729115470   
+           cali.channel spot:node.order spot:output spot:profile.mpi  \
+profile                                                                
+3298923211         spot            true   p4-a.cali             true   
 
-                                                   libraries  \
-profile                                                        
-743475682  [/scratch/group/csce435-f24/Caliper/caliper/li...   
+           spot:region.count spot:time.exclusive spot:time.variance  \
+profile                                                               
+3298923211              true                true               true   
 
-                         cmdline cluster   algorithm programming_model  \
-profile                                                                  
-743475682  [./samplesort, 18, 1]       c  samplesort               mpi   
+           		 launchdate                     libraries  \
+profile                                                                     
+3298923211  1729089290  [/scratch/group/csce435-f24/Caliper/caliper/li...   
 
-          data_type  size_of_data_type  input_size input_type  num_procs  \
-profile                                                                    
-743475682       int                  4      262144     Random         16   
+                        cmdline cluster algorithm programming_model data_type  \
+profile                                                                         
+3298923211  [./radix_sort, 256]       c     radix               mpi       int   
 
-          scalability  group_num  \
-profile                            
-743475682      strong         26   
+            size_of_data_type  input_size input_type  num_procs scalability  \
+profile                                                                       
+3298923211                  4         256     Random          4      strong   
 
-                                       implementation_source  
-profile                                                       
-743475682  AI (ChatGPT) and Online (Class Notes, https://www.geeksforgeeks.org/cpp-program-for-quicksort/, and https://en.wikipedia.org/wiki/Samplesort#:~:text=sequential%2C%20sorting%20algorithm.-,Pseudocode,-%5Bedit%5D)  
+            group_num implementation_source  
+profile                                      
+3298923211         26           online & ai  
+``
