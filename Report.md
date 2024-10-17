@@ -508,7 +508,18 @@ Merge Sort Call Tree
 
 Column Sort Call Tree
 ```
-content here
+0.614 main
+└─ 0.614 main
+   ├─ 0.002 create_matrix
+   ├─ 0.000 gather_final
+   ├─ 0.000 step1_sort
+   ├─ 0.001 step2_transpose
+   ├─ 0.000 step3_sort
+   ├─ 0.002 step4_transpose
+   ├─ 0.000 step5_sort
+   ├─ 0.000 step6_shift
+   ├─ 0.000 step7_sort
+   └─ 0.000 step8_unshift
 ```
 
 Bitonic Sort Call Tree
@@ -674,7 +685,53 @@ profile
 
 Column Sort Metadata
 ```
-content here
+cali.caliper.version  mpi.world.size  \
+profile                                           
+202565079                2.11.0              10   
+977574015                2.11.0               3   
+3024513808               2.11.0              10   
+3635606938               2.11.0               2   
+4276463802               2.11.0              10   
+
+                                                 spot.metrics  \
+profile                                                         
+202565079   min#inclusive#sum#time.duration,max#inclusive#...   
+977574015   min#inclusive#sum#time.duration,max#inclusive#...   
+3024513808  min#inclusive#sum#time.duration,max#inclusive#...   
+3635606938  min#inclusive#sum#time.duration,max#inclusive#...   
+4276463802  min#inclusive#sum#time.duration,max#inclusive#...   
+
+           spot.timeseries.metrics  spot.format.version  \
+profile                                                   
+202565079                                             2   
+977574015                                             2   
+3024513808                                            2   
+3635606938                                            2   
+4276463802                                            2   
+
+                                      spot.options  spot.channels  \
+profile                                                             
+202565079   node.order,region.count,time.exclusive  regionprofile   
+977574015   node.order,region.count,time.exclusive  regionprofile   
+3024513808  node.order,region.count,time.exclusive  regionprofile   
+3635606938  node.order,region.count,time.exclusive  regionprofile   
+4276463802  node.order,region.count,time.exclusive  regionprofile   
+
+           cali.channel spot:node.order       spot:output spot:region.count  \
+profile                                                                       
+202565079          spot            true    p10-a1000.cali              true   
+977574015          spot            true       p3-a11.cali              true   
+3024513808         spot            true   p10-a10000.cali              true   
+3635606938         spot            true        p2-a4.cali              true   
+4276463802         spot            true  p10-a100000.cali              true   
+
+           spot:time.exclusive  
+profile                         
+202565079                 true  
+977574015                 true  
+3024513808                true  
+3635606938                true  
+4276463802                true  
 ```
 
 Bitonic Sort Metadata
