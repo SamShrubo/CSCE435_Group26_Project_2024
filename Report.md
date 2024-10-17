@@ -439,6 +439,7 @@ main():
 ### 3a. Caliper instrumentation
 
 Radix Sort Call Tree
+```
 0.030 main
 ├─ 0.000 data-init-runtime
 ├─ 0.017 comm
@@ -461,6 +462,7 @@ Radix Sort Call Tree
 0.000 MPI_Initialized
 0.000 MPI_Finalized
 0.001 MPI_Comm_dup
+```
 
 ### 3b. Collect Metadata
 
