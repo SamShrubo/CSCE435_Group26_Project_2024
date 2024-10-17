@@ -27,7 +27,7 @@ We will be using Discord for our team communications.
 ### 2a. Brief project description (what algorithms will you be comparing and on what architectures)
 
 - Bitonic Sort: A sorting algorithm that scales well with parallel computing architecture. The algorithm requires the array to be size of 2^n where n is a positive integer value. It process the array recursively as subarrays and sort them into bitonic arrays. It will be implemented on the Grace Cluster using MPI.
-- Sample Sort: Implemented using MPI on the Grace cluster. Appropriately sized arrays will be generated on each process and sorted using quicksort. Samples are taken from each process's local array, and a sample is then taken from the set of samples. Using the final sample, array elements are sorted into buckets, rearranged, and sorted locally. All sub-arrays are conglomerated back together, resulting in a sorted large array.   
+- Sample Sort: Implemented using MPI on the Grace cluster. Appropriately sized arrays will be generated on each process and sorted using quicksort. Samples are taken from each process's local array, and a sample is then taken from the set of samples. Using the final sample, array elements are sorted into buckets, rearranged, and sorted locally. All sub-arrays are conglomerated back together, resulting in a sorted global array.   
 - Merge Sort: Implement using MPI on the Grace cluster, Multiple sub-arrays that will make up the final sorted array will be generated within each process within MPI, from there they are sorted locally using std::sort, then the process of merging each process with its neighboring processes in a loop continues until the final array is produced and all sub-arrays are merged.
 - Radix Sort: Implemented using MPI on Grace cluster. The inital array will be split into multiple smaller arrays across the nodes and processors, and sorted locally using a counting sort on the current digit. Afterwards a prefix sum will be caluclated to help put the integers back into a paritally sorted array until all the digit places have een sorted resulting in a sorted global array. 
 - Column Sort: A parallel sorting algorithm that is well suited for sorting data arranged in a 2D grid. The matrix is sorted column-wise, transposed, and sorted again row-wise. This process is repeated until the matrix is sorted. This algorithm will be implemented using MPI on the Grace cluster.
@@ -464,6 +464,43 @@ Radix Sort Call Tree
 0.001 MPI_Comm_dup
 ```
 
+Sample Sort Call Tree
+```
+1.099 main
+└─ 1.099 main
+   ├─ 0.718 MPI_Init
+   ├─ 0.000 MPI_Comm_rank
+   ├─ 0.000 MPI_Comm_size
+   ├─ 0.001 data_init_runtime
+   ├─ 0.112 comp
+   │  ├─ 0.019 comp_small
+   │  └─ 0.092 comp_large
+   ├─ 0.263 comm
+   │  ├─ 0.257 comm_large
+   │  │  ├─ 0.016 MPI_Gather
+   │  │  └─ 0.241 MPI_Bcast
+   │  └─ 0.006 comm_small
+   │     ├─ 0.000 MPI_Alltoall
+   │     ├─ 0.002 MPI_Alltoallv
+   │     └─ 0.003 MPI_Gatherv
+   └─ 0.001 correctness_check
+```
+
+Merge Sort Call Tree
+```
+content here
+```
+
+Column Sort Call Tree
+```
+content here
+```
+
+Bitonic Sort Call Tree
+```
+content here
+```
+
 ### 3b. Collect Metadata
 
 Radix Sort Metadata
@@ -506,4 +543,66 @@ profile
             group_num implementation_source  
 profile                                      
 3298923211         26           online & ai  
+```
+
+Sample Sort Metadata
+```
+         cali.caliper.version  mpi.world.size  \
+profile                                          
+743475682               2.11.0              16   
+
+                                                spot.metrics  \
+profile                                                        
+743475682  min#inclusive#sum#time.duration,max#inclusive#...   
+
+          spot.timeseries.metrics  spot.format.version  \
+profile                                                  
+743475682                                            2   
+
+                                     spot.options  spot.channels cali.channel  \
+profile                                                                         
+743475682  node.order,region.count,time.exclusive  regionprofile         spot   
+
+          spot:node.order                      spot:output spot:region.count  \
+profile                                                                        
+743475682            true  cali-samp-262144-p16-type1.cali              true   
+
+          spot:time.exclusive  launchdate  \
+profile                                     
+743475682                true  1729115470   
+
+                                                   libraries  \
+profile                                                        
+743475682  [/scratch/group/csce435-f24/Caliper/caliper/li...   
+
+                         cmdline cluster   algorithm programming_model  \
+profile                                                                  
+743475682  [./samplesort, 18, 1]       c  samplesort               mpi   
+
+          data_type  size_of_data_type  input_size input_type  num_procs  \
+profile                                                                    
+743475682       int                  4      262144     Random         16   
+
+          scalability  group_num  \
+profile                            
+743475682      strong         26   
+
+                                       implementation_source  
+profile                                                       
+743475682  AI (ChatGPT) and Online (Class Notes, https://www.geeksforgeeks.org/cpp-program-for-quicksort/, and https://en.wikipedia.org/wiki/Samplesort#:~:text=sequential%2C%20sorting%20algorithm.-,Pseudocode,-%5Bedit%5D)  
+```
+
+Merge Sort Metadata
+```
+content here
+```
+
+Column Sort Metadata
+```
+content here
+```
+
+Bitonic Sort Metadata
+```
+content here
 ```
