@@ -488,7 +488,22 @@ Sample Sort Call Tree
 
 Merge Sort Call Tree
 ```
-content here
+0.889 main
+├─ 0.867 main
+│  ├─ 0.864 data_init
+│  │  └─ 0.000 MPI_Init
+│  ├─ 0.002 comp
+│  │  ├─ 0.001 comp_small
+│  │  └─ 0.001 comp_large
+│  ├─ 0.002 comm
+│  │  └─ 0.002 comm_large
+│  │     ├─ 0.003 MPI_Recv
+│  │     └─ 0.000 MPI_Send
+│  └─ 0.000 correctness_check
+├─ 0.000 MPI_Finalize
+├─ 0.000 MPI_Initialized
+├─ 0.000 MPI_Finalized
+└─ 0.022 MPI_Comm_dup
 ```
 
 Column Sort Call Tree
@@ -594,7 +609,45 @@ profile
 
 Merge Sort Metadata
 ```
-content here
+           cali.caliper.version  mpi.world.size  \
+profile                                           
+1981606483               2.11.0              16   
+
+                                                 spot.metrics  \
+profile                                                         
+1981606483  min#inclusive#sum#time.duration,max#inclusive#...   
+
+           spot.timeseries.metrics  spot.format.version  \
+profile                                                   
+1981606483                                            2   
+
+                                                 spot.options  spot.channels  \
+profile                                                                        
+1981606483  time.variance,profile.mpi,node.order,region.co...  regionprofile   
+
+           cali.channel spot:node.order   spot:output spot:profile.mpi  \
+profile                                                                  
+1981606483         spot            true  p16-a16.cali             true   
+
+           spot:region.count spot:time.exclusive spot:time.variance  \
+profile                                                               
+1981606483              true                true               true   
+
+            launchdate                                          libraries  \
+profile                                                                     
+1981606483  1729133312  [/scratch/group/csce435-f24/Caliper/caliper/li...   
+
+                              cmdline cluster   algorithm programming_model  \
+profile                                                                       
+1981606483  [./mergesort, 16, Random]       c  Merge Sort               mpi   
+
+           data_type  size_of_data_type  input_size input_type  num_procs  \
+profile                                                                     
+1981606483       int                  4       65536     Random         16   
+
+                  scalability  group_num implementation_source  
+profile                                                         
+1981606483  weak (assumption)         26      ai & handwritten  
 ```
 
 Column Sort Metadata
