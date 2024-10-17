@@ -12,35 +12,6 @@
 
 const int BASE = 10; // Base for decimal numbers
 
-// Function to generate a random array
-std::vector<int> generateArrayVector(int size) {
-    std::vector<int> arr(size);
-    for(int i = 0; i < size; i++) {
-        arr[i] = rand() % 10000; // Generates random integers between 0 and 9999
-    }
-    return arr;
-}
-
-// Function to print the array
-void printArray(const std::vector<int>& arr, int processorNumber) {
-    printf("Processor number %d, array:", processorNumber);
-    for(auto num : arr) {
-        printf(" %d", num);
-    }
-    printf("\n");
-}
-
-// Function to check if the array is sorted
-bool correctnessCheck(const std::vector<int>& arr) { 
-    if (arr.empty()) return true;
-    for(size_t i = 1; i < arr.size(); i++) {
-        if(arr[i] < arr[i-1]) {
-            return false;
-        }
-    }
-    return true;
-}
-
 // Counting sort function (sorting portion only)
 void counting_sort(int* arr, int size, int digitPlacement, int* buckets) {
     int output[size]; 
@@ -99,7 +70,10 @@ int main(int argc, char* argv[]) {
     
     srand(time(NULL) + taskid);
     CALI_MARK_BEGIN("data-init-runtime");
-    std::vector<int> arr = generateArrayVector(sizeOfLocalArray);
+    std::vector<int> arr(sizeOfLocalArray);
+    for(int i = 0; i < sizeOfLocalArray; i++) {
+        arr[i] = rand() % 10000;
+    }
     CALI_MARK_END("data-init-runtime");
   
     // Find local maximum
@@ -131,8 +105,8 @@ int main(int argc, char* argv[]) {
     
     // Radix Sort Loop
     
-    int* localBuffer = (int*) malloc(sizeof(int) * sizeOfLocalArray);
-    int* allBuckets = (int*) malloc(sizeof(int) * 10 * numTasks);
+    int* localBuffer = new int[sizeOfLocalArray];
+    int* allBuckets = new int[10 * numTasks];
     for(int d = 0; d < numDigits; d++) {
 
         int buckets[10] = {0};
@@ -181,18 +155,18 @@ int main(int argc, char* argv[]) {
         MPI_Barrier(MPI_COMM_WORLD);
         
         int digitIndex[2];
-        int digit, lsd, destIdx, destProcess, localDestIdx;
+        int digit, leastDigit, destIdx, destProcess, localDestIdx;
         for (int i = 0; i < sizeOfLocalArray; i++)
         {
             CALI_MARK_BEGIN("comp");
             CALI_MARK_BEGIN("comp-small");
             digit = arr[i];
-            lsd = (arr[i] / digitPlacement) % 10;
+            leastDigit = (arr[i] / digitPlacement) % 10;
 
-            destIdx = allDigitsPrefixTotal[lsd] - allDigitsTotal[lsd] + allDigitsLeftTotal[lsd] + LeastDigitTracking[lsd];
+            destIdx = allDigitsPrefixTotal[leastDigit] - allDigitsTotal[leastDigit] + allDigitsLeftTotal[leastDigit] + LeastDigitTracking[leastDigit];
             
             
-            LeastDigitTracking[lsd]++;
+            LeastDigitTracking[leastDigit]++;
             destProcess = destIdx / sizeOfLocalArray; 
 
             digitIndex[0] = digit;
@@ -227,10 +201,20 @@ int main(int argc, char* argv[]) {
         
         MPI_Barrier(MPI_COMM_WORLD);
     }
-    
+    delete[] localBuffer;
+    delete[] allBuckets;
     // Verification 
     CALI_MARK_BEGIN("correctness-check");
-    bool local_sorted = correctnessCheck(arr);
+
+    bool local_sorted = true;
+    if (!arr.empty()) {
+        for(size_t i = 1; i < arr.size(); i++) {
+            if(arr[i] < arr[i-1]) {
+                return false;
+            }
+        }
+    }
+
     if(!local_sorted) {
         std::cout << "Process " << taskid << ": Local Array not sorted" << std::endl;
     }
@@ -268,7 +252,13 @@ int main(int argc, char* argv[]) {
             if (rank == 0) {
                 printf("Finished Arrays\n");
             }
-            printArray(arr, taskid);
+            
+            printf("Processor number %d, array detail:", taskid);
+            for(auto currentElement : arr) {
+                printf(" %d", currentElement);
+            }
+            printf("\n");  
+
             fflush(stdout);
         }
         rank++;
