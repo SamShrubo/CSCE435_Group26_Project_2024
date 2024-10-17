@@ -1,0 +1,3 @@
+/scratch/user/zhongyouwu/Project/MPI_Builds/CMakeFiles/rebuild_cache.dir
+/scratch/user/zhongyouwu/Project/MPI_Builds/CMakeFiles/edit_cache.dir
+/scratch/user/zhongyouwu/Project/MPI_Builds/CMakeFiles/bitonicsort.dir
