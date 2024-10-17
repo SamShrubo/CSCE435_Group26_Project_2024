@@ -210,7 +210,7 @@ int main(int argc, char* argv[]) {
     if (!arr.empty()) {
         for(size_t i = 1; i < arr.size(); i++) {
             if(arr[i] < arr[i-1]) {
-                return false;
+                local_sorted = false;
             }
         }
     }
