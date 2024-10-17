@@ -435,3 +435,77 @@ main():
     - Input types: Sorted, Random, Reverse sorted, 1% perturbed
   - Strong scaling (same problem size, increase the number of processors/nodes)
   - Weak scaling (increase problem size, increase the number of processors)
+
+### 3a. Caliper instrumentation
+
+Radix Sort Call Tree
+0.030 main
+├─ 0.000 data-init-runtime
+├─ 0.017 comm
+│  ├─ 0.002 comm-small
+│  │  ├─ 0.001 MPI_Allreduce
+│  │  └─ 0.000 MPI_Allgather
+│  └─ 0.013 comm-large
+│     ├─ 0.001 MPI_Send
+│     └─ 0.010 MPI_Recv
+├─ 0.005 comp
+│  ├─ 0.002 comp-small
+│  └─ 0.000 comp-large
+├─ 0.006 MPI_Barrier
+└─ 0.000 correctness-check
+   ├─ 0.000 MPI_Send
+   ├─ 0.000 MPI_Recv
+   ├─ 0.000 MPI_Allreduce
+   └─ 0.000 MPI_Barrier
+0.000 MPI_Finalize
+0.000 MPI_Initialized
+0.000 MPI_Finalized
+0.001 MPI_Comm_dup
+
+### 3b. Collect Metadata
+
+Radix Sort Metadata
+
+         cali.caliper.version  mpi.world.size  \
+profile                                          
+743475682               2.11.0              16   
+
+                                                spot.metrics  \
+profile                                                        
+743475682  min#inclusive#sum#time.duration,max#inclusive#...   
+
+          spot.timeseries.metrics  spot.format.version  \
+profile                                                  
+743475682                                            2   
+
+                                     spot.options  spot.channels cali.channel  \
+profile                                                                         
+743475682  node.order,region.count,time.exclusive  regionprofile         spot   
+
+          spot:node.order                      spot:output spot:region.count  \
+profile                                                                        
+743475682            true  cali-samp-262144-p16-type1.cali              true   
+
+          spot:time.exclusive  launchdate  \
+profile                                     
+743475682                true  1729115470   
+
+                                                   libraries  \
+profile                                                        
+743475682  [/scratch/group/csce435-f24/Caliper/caliper/li...   
+
+                         cmdline cluster   algorithm programming_model  \
+profile                                                                  
+743475682  [./samplesort, 18, 1]       c  samplesort               mpi   
+
+          data_type  size_of_data_type  input_size input_type  num_procs  \
+profile                                                                    
+743475682       int                  4      262144     Random         16   
+
+          scalability  group_num  \
+profile                            
+743475682      strong         26   
+
+                                       implementation_source  
+profile                                                       
+743475682  AI (ChatGPT) and Online (Class Notes, https://www.geeksforgeeks.org/cpp-program-for-quicksort/, and https://en.wikipedia.org/wiki/Samplesort#:~:text=sequential%2C%20sorting%20algorithm.-,Pseudocode,-%5Bedit%5D)  
