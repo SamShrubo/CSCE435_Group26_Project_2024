@@ -466,7 +466,7 @@ Radix Sort Call Tree
 
 Radix Sort Metadata
 
-``
+```
            cali.caliper.version  mpi.world.size  \
 profile                                           
 3298923211               2.11.0               4   
@@ -504,4 +504,4 @@ profile
             group_num implementation_source  
 profile                                      
 3298923211         26           online & ai  
-``
+```
