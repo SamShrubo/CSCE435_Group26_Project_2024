@@ -43,15 +43,64 @@ void counting_sort(int* arr, int size, int digitPlacement, int* buckets) {
     }
 }
 
+void create_sorted_array(std::vector<int> &localArray, int rank, int local_size){
+    localArray.resize(local_size);
+    int start = rank * local_size;
+    for(int i = 0; i < local_size; i++) {
+        localArray[i] = start + i;
+    }
+}
+
+void create_random_array(std::vector<int> &localArray, int rank, int local_size){
+    localArray.resize(local_size);
+    std::srand(time(0) + rank);
+    for(int i = 0; i < local_size; i++) {
+        localArray[i] = std::rand() % RAND_MAX;
+    }
+}
+
+void create_reverse_sorted(std::vector<int> &localArray, int rank, int local_size){
+    localArray.resize(local_size);
+    int start = rank * local_size;
+    for(int i = 0; i < local_size; i++) {
+        localArray[i] = start + (local_size - i - 1);
+    }
+}
+
+void create_one_percent_perturbed(std::vector<int> &localArray, int rank, int local_size){
+    create_sorted_array(localArray, rank, local_size);
+    // perturb the array
+    int num_to_perturb = (int)(std::round(local_size * 0.01));
+    if(num_to_perturb == 0) { // ensure array will always be perturbed in some way
+        num_to_perturb = 1;
+    }
+    for(int i = 0; i < num_to_perturb; i++) {
+        std::swap(localArray[std::rand() % local_size], localArray[std::rand() % local_size]);
+    }
+}
+
+void create_input(std::vector<int> &localArray, int local_size, int input_type, int rank){
+    if(input_type == 0) { // sorted
+        create_sorted_array(localArray, rank, local_size);
+    } else if (input_type == 1) { // random
+        create_random_array(localArray, rank, local_size);
+    } else if (input_type == 2) { // reverse sorted
+        create_reverse_sorted(localArray, rank, local_size);
+    } else if (input_type == 3) { // 1% perturbed
+        create_one_percent_perturbed(localArray, rank, local_size);
+    }
+}
+
 int main(int argc, char* argv[]) {
     // Initialize MPI environment
     MPI_Init(&argc, &argv);
     
     int taskid, numTasks;
+    std::string input_type;
     MPI_Comm_rank(MPI_COMM_WORLD, &taskid);
     MPI_Comm_size(MPI_COMM_WORLD, &numTasks);
     
-    if(argc < 2) {
+    if(argc < 3) {
         if(taskid == 0) {
             std::cerr << "Usage: " << argv[0] << " <size_of_array>" << std::endl;
         }
@@ -60,7 +109,23 @@ int main(int argc, char* argv[]) {
     }
     
     int sizeOfArray = atoi(argv[1]);
+    int inputType = atoi(argv[2]);
     int sizeOfLocalArray = sizeOfArray / numTasks;
+
+    switch(inputType) {
+        case 0:
+            input_type = "Sorted";
+            break;
+        case 1:
+            input_type = "Random";
+            break;
+        case 2:
+            input_type = "Reverse sorted";
+            break;
+        case 3:
+            input_type = "1%% perturbed";
+            break;
+    }
     
     // Initialize profiling tools
     cali::ConfigManager mgr;
@@ -71,9 +136,7 @@ int main(int argc, char* argv[]) {
     srand(time(NULL) + taskid);
     CALI_MARK_BEGIN("data-init-runtime");
     std::vector<int> arr(sizeOfLocalArray);
-    for(int i = 0; i < sizeOfLocalArray; i++) {
-        arr[i] = rand() % 10000;
-    }
+    create_input(arr, sizeOfLocalArray, inputType, taskid);
     CALI_MARK_END("data-init-runtime");
   
     // Find local maximum
@@ -278,7 +341,7 @@ int main(int argc, char* argv[]) {
     adiak::value("data_type", "int"); // Data type of input elements
     adiak::value("size_of_data_type", sizeof(int)); // Size of data type in bytes
     adiak::value("input_size", sizeOfArray); // Number of elements in the input dataset
-    adiak::value("input_type", "Random"); // Type of input data
+    adiak::value("input_type", input_type); // Type of input data
     adiak::value("num_procs", numTasks); // Number of MPI processes
     adiak::value("scalability", "strong"); // Scalability type
     adiak::value("group_num", 26); // Group number
