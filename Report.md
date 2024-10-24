@@ -860,9 +860,70 @@ Content to be added later
 ```
 
 #### Column Sort Performance Evaluation:
-```
-Content to be added later
-```
+I was able to collect data for most configurations using up to 256 processors. However, I encountered issues when attempting to run the experiments on 512 and 1024 processors. These configurations caused bad address errors (despite my attempts to allocate more memory and optimize the algorithm. These errors are occuring in my transpose and shift functions.)
+
+Data for 2^26 exists for num_procs 2 and 32 only, all other processor counts failed. Likewise, there is no data for 2^28 due to out of memory errors.
+
+
+## 2^16 array element graphs
+<div style="display: flex; justify-content: space-between;">
+  <img src="Graphs/columnsort/comm_65536.png" alt="Communication" style="width: 30%;">
+  <img src="Graphs/columnsort/comp_65536.png" alt="Computation" style="width: 30%;">
+  <img src="Graphs/columnsort/main_65536.png" alt="Main" style="width: 30%;">
+</div>
+
+#### - Speedup is steady, except for main, which indicates portions of the code not wrapped in comm or comp being spedup. The highest points of speed up occur at 8 and 32. Overall, this indicates that random and reverse sorted are stable input conditions for this algorithm, while sorted and 1% perturbed are heavily influenced by the number of processors.
+
+## 2^18 array element graphs
+<div style="display: flex; justify-content: space-between;">
+  <img src="Graphs/columnsort/comm_262144.png" alt="Communication" style="width: 30%;">
+  <img src="Graphs/columnsort/comp_262144.png" alt="Computation" style="width: 30%;">
+  <img src="Graphs/columnsort/main_262144.png" alt="Main" style="width: 30%;">
+</div>
+
+#### - There was missing data here, but here we can see very steady runtimes for all processors, but see a large jump for 1% perturbed, possibly due to the high optimizations of std::sort.
+
+## 2^20 array element graphs
+<div style="display: flex; justify-content: space-between;">
+  <img src="Graphs/columnsort/comm_1048576.png" alt="Communication" style="width: 30%;">
+  <img src="Graphs/columnsort/comp_1048576.png" alt="Computation" style="width: 30%;">
+  <img src="Graphs/columnsort/main_1048576.png" alt="Main" style="width: 30%;">
+</div>
+
+#### - Speedup jumps up and down for all input types. This could be due to specific transpose conditions, where the number of sends and receives per processor is influenced by the dimension of the matrix (which is r x p)
+
+## 2^22 array element graphs
+<div style="display: flex; justify-content: space-between;">
+  <img src="Graphs/columnsort/comm_4194304.png" alt="Communication" style="width: 30%;">
+  <img src="Graphs/columnsort/comp_4194304.png" alt="Computation" style="width: 30%;">
+  <img src="Graphs/columnsort/main_4194304.png" alt="Main" style="width: 30%;">
+</div>
+
+#### - There are gaps in the data here, (one from p=16 and one from p=64), due to edge cases I did not consider. However, speedup is flat for all input types except for random, which sees drastic increase at p=16 and p=64.
+
+## 2^24 array element graphs
+<div style="display: flex; justify-content: space-between;">
+  <img src="Graphs/columnsort/comm_16777216.png" alt="Communication" style="width: 30%;">
+  <img src="Graphs/columnsort/comp_16777216.png" alt="Computation" style="width: 30%;">
+  <img src="Graphs/columnsort/main_16777216.png" alt="Main" style="width: 30%;">
+</div>
+
+#### - Comm and comp are nearly identical, this is because in column sort,  communication and computation are closely tied together when it comes to tranposing and shifting data.
+
+##### 2^26 array element graphs
+<div style="display: flex; justify-content: space-between;">
+  <img src="Graphs/columnsort/comm_67108864.png" alt="Communication" style="width: 30%;">
+  <img src="Graphs/columnsort/comp_67108864.png" alt="Computation" style="width: 30%;">
+  <img src="Graphs/columnsort/main_67108864.png" alt="Main" style="width: 30%;">
+</div>
+
+#### - I was only able to get four data points (all on p=2).
+
+## 2^28 array element graphs
+#### - No data points for 2^28
+
+## Comments
+Overall, column sort doesn't speedup much after hitting 32 processors. On paper it should scale well, but I was never able to finish running any data on 512 or 1024, which tells me the actual implementation struggles with out of memory errors and an increase in communication costs. (currently, each value not changing position within its own rank sends data to another rank, I tried to optimize this but ran out of time)
 
 #### Bitonic Sort Performance Evaluation:
 ```
