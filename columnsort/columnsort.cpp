@@ -1,28 +1,9 @@
 /******************************************************************************
 * FILE: columnsort.cpp
-* DESCRIPTION:
+* DESCRIPTION: Column Sort
 * AUTHOR: Griffin Beaudreau
-* LAST REVISED: 10/14/2024
+* LAST REVISED: 10/16/2024
 *******************************************************************************/
-
-/*
-    Begins with n = r*s values place in an r x s matrix, where r % s = 0 and r >= 2(2-1)^2.
-    
-    Expected input is the number of values n and the number of processors p.
-    r = (n + p - 1) / p
-    
-
-    Steps:
-        1) Sort the values in each column
-        2) transpose the matrix
-        3) Sort the values in each column
-        4) transpose the matrix
-        5) Sort the values in each column
-        6) shift the values foward by r/2 positions. Creates an extra column. Fill vacant positions with -infinity
-            excess values with +infinity
-        7) Sort the values in each column
-        8) Unshift the values back by r/2 positions
-*/
 
 #include "mpi.h"
 #include <stdio.h>

@@ -751,3 +751,120 @@ profile
 4202622048 	2.11.0 	8 	min#inclusive#sum#time.duration,max#inclusive#... 		2 	node.order,region.count,time.exclusive 	regionprofile 	spot 	true 	1024-8.cali 	true 	true 	zhongyouwu 	1727466954 	[/scratch/group/csce435-f24/Caliper/caliper/li... 	[./mpi_mm, 1024] 	c 	8 	1024 	master_worker_matrix_multiplication 	8 	6.465010 	0.040723 	6.424182 	0.192274 	0.076241 	0.152816 	6.308338 	6.006143 	6.124993 	0.024461 	0.000866 	0.006158
 4288893745 	2.11.0 	4 	min#inclusive#sum#time.duration,max#inclusive#... 		2 	node.order,region.count,time.exclusive 	regionprofile 	spot 	true 	1024-4.cali 	true 	true 	zhongyouwu 	1727466897 	[/scratch/group/csce435-f24/Caliper/caliper/li... 	[./mpi_mm, 1024] 	c 	4 	1024 	master_worker_matrix_multiplication 	8 	7.564211 	0.031770 	7.532343 	0.093590 	0.067238 	0.076938 	7.483138 	7.354114 	7.410794 	0.012188 	0.002114 	0.008659
 ```
+### 4a. Vary the following parameters
+For input_size's:
+- 2^16, 2^18, 2^20, 2^22, 2^24, 2^26, 2^28
+
+For input_type's:
+- Sorted, Random, Reverse sorted, 1%perturbed
+
+MPI: num_procs:
+- 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024
+
+This should result in 4x7x10=280 Caliper files for your MPI experiments.
+
+### 4b. Hints for performance analysis
+
+To automate running a set of experiments, parameterize your program.
+
+- input_type: "Sorted" could generate a sorted input to pass into your algorithms
+- algorithm: You can have a switch statement that calls the different algorithms and sets the Adiak variables accordingly
+- num_procs: How many MPI ranks you are using
+
+When your program works with these parameters, you can write a shell script 
+that will run a for loop over the parameters above (e.g., on 64 processors, 
+perform runs that invoke algorithm2 for Sorted, ReverseSorted, and Random data).  
+
+### 4c. You should measure the following performance metrics
+- `Time`
+    - Min time/rank
+    - Max time/rank
+    - Avg time/rank
+    - Total time
+    - Variance time/rank
+ 
+#### Radix Sort Performance Evaluation:
+Hydra errors in the grace cluster made it borderline impossible to consistently run 512 and 1024 processes which is why I only have one 512 run. The code becomes to slow for 2^26 elements at lower processor numbers when it takes about 2 hours for one run at 64 processors. The reason for the delay is probably that there is a lot of sending happening that could probably be optimized but I don’t know how to optimize it yet so I can’t run the largest problem size. 
+##### Graphs 
+![alt text](Graphs/main-65536.png)
+![alt text](Graphs/main-262144.png)
+![alt text](Graphs/main-1048576.png)
+![alt text](Graphs/main-4194304.png)
+![alt text](Graphs/main-16777216.png)
+![alt text](Graphs/main-67108864.png)
+There is a general downward trend for all the graph and almost all of them have a spike when reaching 32 processors. The decreasing trend can be attributed to the local array shriking and the proccors having the communicate less when the number of processors goes up since the problem size stays the same. 
+![alt text](Graphs/comm-65536.png)
+![alt text](Graphs/comm-262144.png)
+![alt text](Graphs/comm-1048576.png)
+![alt text](Graphs/comm-4194304.png)
+![alt text](Graphs/comm-16777216.png)
+![alt text](Graphs/comm-67108864.png)
+There is a general downward trend for all the graph but other than that there isn't much similarity across all the graphs. The decreasing trend can be attributed to the local array shriking and the proccors having the communicate less when the number of processors goes up since the problem size stays the same. 
+![alt text](Graphs/comp-large-65536.png)
+![alt text](Graphs/comp-large-262144.png)
+![alt text](Graphs/comp-large-1048576.png)
+![alt text](Graphs/comp-large-4194304.png)
+![alt text](Graphs/comp-large-16777216.png)
+![alt text](Graphs/comp-large-67108864.png)
+There is very little change in the speed up for computation as the number of processros increase and this is most likely due to the way the caliper barriers were placed during implemenation as there were other place it should have been placed but I didn't notice it until much later. I plan on rerunning my code to get more accurate timings on my algorithim. 
+
+#### Sample Sort Performance Evaluation
+I had issues running jobs with 512 and 1024 processors on Grace. Hydra consistently would error, and the runs would not complete. Additionally, Grace's exceptionally long queue times on 10/21 and 10/22 made it impossible for me to run more jobs. This is why the graphs for 2^24, 2^26, and 2^28 are sparse. 
+
+
+##### 2^16 array element graphs
+![Alt text](Graphs/samplesort_main_65536.png)
+![Alt text](Graphs/samplesort_comp_65536.png)
+![Alt text](Graphs/samplesort_comm_65536.png)
+- Computation time decreases as the number of processors increases while the computation time increases. Overall, the general pattern of runtimes is that the runtime decreases as the number of processors increases, but there is a point of dimininishing returns at smaller input sizes. 
+
+##### 2^18 array element graphs
+![Alt text](Graphs/samplesort_main_262144.png)
+![Alt text](Graphs/samplesort_comp_262144.png)
+![Alt text](Graphs/samplesort_comm_262144.png)
+- Computation time decreases as the number of processors increases while the computation time increases. Communication had strange spikes for the 1% perturbed and reverse sorted inputs. The sorted input had a consistently low communication time due to array objects not having to be sent between buckets. 
+
+##### 2^20 array element graphs
+![Alt text](Graphs/samplesort_main_1048576.png)
+![Alt text](Graphs/samplesort_comp_1048576.png)
+![Alt text](Graphs/samplesort_comm_1048576.png)
+- Computation and communication times generally decrease as the number of processors increase. Overall, the general pattern of runtimes is that the runtime decreases as the number of processors increases. All data in these graphs looks as expected. 
+
+##### 2^22 array element graphs
+![Alt text](Graphs/samplesort_main_4194304.png)
+![Alt text](Graphs/samplesort_comp_4194304.png)
+![Alt text](Graphs/samplesort_comm_4194304.png)
+- There are holes in this graph due to the excessive time that the 2 and 4 processor jobs take with 2^22 array elements as inputs. In general, computation and communication times generally decrease as the number of processors increase.
+
+##### 2^24 array element graphs
+![Alt text](Graphs/samplesort_main_16777216.png)
+![Alt text](Graphs/samplesort_comp_16777216.png)
+![Alt text](Graphs/samplesort_comm_16777216.png)
+- Performance time appears to decrease as the number of processors increases. More time is spent communicating than performing computations. 
+
+##### 2^26 array element graphs
+![Alt text](Graphs/samplesort_main_67108864.png)
+![Alt text](Graphs/samplesort_comp_67108864.png)
+![Alt text](Graphs/samplesort_comm_67108864.png)
+- The only job that has been run with a 2^26 array input size was the 1024 process job. There is no other data to compare this point against. Comparatively, the most time was spent communicating, not performing computations. 
+
+##### 2^28 array element graphs
+- At this point in time, no jobs have been run with 2^28 array elements in them. This is due to the current implementation of samplesort having poor scaling and timing out within a reasonable amount of time (four hours).
+
+##### Comments
+In general, the current implementation of sample sort appears to not scale well due to the amount of time spent communicating. Performance time also almost always appears to decrease as the number of processors increases. I intend on reconfiguring my code to reduce communication times and rerunning all of my jobs again in the next week to have more comprehensive data.  
+
+#### Merge Sort Performance Evaluation:
+```
+Content to be added later
+```
+
+#### Column Sort Performance Evaluation:
+```
+Content to be added later
+```
+
+#### Bitonic Sort Performance Evaluation:
+```
+Content to be added later
+```

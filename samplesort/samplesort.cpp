@@ -1,6 +1,5 @@
 // Kaitlyn Griffin
 // CSCE 435 - Sample Sort Implementation
-// create pseudocode for sample sort using MPI
 
 #include "mpi.h"
 #include <stdio.h>
@@ -68,14 +67,14 @@ void create_one_percent_perturbed(int *localArray, int rank, int local_size){
 // function to create array depending on the type of input and size
 // Input sizes: 2^16, 2^18, 2^20, 2^22, 2^24, 2^26, 2^28
 // Input types: Sorted, Random, Reverse sorted, 1% perturbed
-void create_input(int *localArray, int local_size, int input_type, int rank){
-    if(input_type == 0) { // sorted
+void create_input(int *localArray, int local_size, const std::string& input_type, int rank){
+    if(input_type == "Sorted") { // sorted
         create_sorted_array(localArray, rank, local_size);
-    } else if (input_type == 1) { // random
+    } else if (input_type == "Random") { // random
         create_random_array(localArray, rank, local_size);
-    } else if (input_type == 2) { // reverse sorted
+    } else if (input_type == "ReverseSorted") { // reverse sorted
         create_reverse_sorted(localArray, rank, local_size);
-    } else if (input_type == 3) { // 1% perturbed
+    } else if (input_type == "1_perc_perturbed") { // 1% perturbed
         create_one_percent_perturbed(localArray, rank, local_size);
     }
 }
@@ -122,26 +121,28 @@ int main(int argc, char* argv[]) {
     CALI_MARK_BEGIN("main");
 
     // Input should be size of array (exponent) and input type
-    int exponent, array_size, inputType;
+    int exponent, array_size;
+    string inputType;
     if (argc == 3) {
         // take in the size of the array x with 2^x elements
         exponent = atoi(argv[1]);  
         // exponentiate 2 to the power of x to get final array size
         array_size = pow(2, exponent);
-        // get the input type, 0 for sorted, 1 for random, 2 for reverse sorted, 3 for 1% perturbed
-        inputType = atoi(argv[2]);  // Get the input type
+        // get the input type
+        inputType = argv[2];  // Get the input type
     } else {
         printf("\n Please provide the size of the array and the input type\n");
         return 0;
     }
 
+    bool validInputType = inputType == "Sorted" || inputType == "Random" || inputType == "ReverseSorted" || inputType == "1_perc_perturbed";
     // input validation
      if(exponent % 2 != 0 /*|| exponent < 16*/ || exponent > 28) {
         printf("\n Please provide a valid size of the array as an even number between 16 and 28, inclusive\n");
         return 0;
-    } else if(inputType < 0 || inputType > 3) {
-        printf("\n Please provide a valid input type between 0 and 3\n");
-        printf("0 for sorted, 1 for random, 2 for reverse sorted, 3 for 1%% perturbed\n");
+    } else if(!validInputType) {
+        printf("\n Please provide a valid input type.\n");
+        printf("Valid options: Sorted, Random, ReverseSorted, 1_perc_perturbed \n");
         return 0;
     }
 
@@ -157,26 +158,26 @@ int main(int argc, char* argv[]) {
         data_type = "int",
         input_type, // choices: "Sorted", "Random", "Reverse sorted", "1% perturbed"
         scalability = "strong", // choices: "weak", "strong"
-        implementation_source = "AI (ChatGPT) and Online (Class Notes, https://www.geeksforgeeks.org/cpp-program-for-quicksort/, and https://en.wikipedia.org/wiki/Samplesort#:~:text=sequential%%2C%%20sorting%%20algorithm.-,Pseudocode,-%5Bedit%%5D)"; // choices: ("online", "ai", "handwritten")
+        implementation_source = "AI and Online"; // choices: ("online", "ai", "handwritten")
+        // online sources: Class Notes, https://www.geeksforgeeks.org/cpp-program-for-quicksort/ and https://en.wikipedia.org/wiki/Samplesort#:~:text=sequential%%2C%%20sorting%%20algorithm.-,Pseudocode,-%5Bedit%5D)
     int 
         group_number = 26,
         size_of_data_type = sizeof(int),
         input_size = array_size,
         num_procs; // number of processors (MPI ranks)
 
-    switch(inputType) {
-        case 0:
-            input_type = "Sorted";
-            break;
-        case 1:
-            input_type = "Random";
-            break;
-        case 2:
-            input_type = "Reverse sorted";
-            break;
-        case 3:
-            input_type = "1%% perturbed";
-            break;
+    // convert to choices wanted in adiak
+    if(inputType == "Random") {
+        input_type = "Random";
+    } else if(inputType == "Sorted") {
+        input_type = "Sorted";
+    } else if (inputType == "ReverseSorted") {
+        input_type = "Reverse sorted";
+    } else if (inputType == "1_perc_perturbed") {
+        input_type = "1%% perturbed";
+    } else {
+        printf("invalid input somehow");
+        return 0;
     }
 
     // Processor counts: 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024
@@ -199,8 +200,6 @@ int main(int argc, char* argv[]) {
     cali::ConfigManager mgr;
     mgr.start();
 
-    // START OF PARALLEL SECTION
-
     // data_init_runtime start
     CALI_MARK_BEGIN("data_init_runtime");
     int local_size = array_size / numtasks;
@@ -208,7 +207,7 @@ int main(int argc, char* argv[]) {
 
     // distribute elements of array to m buckets
     // generate arrays in each process
-    create_input(localArray, local_size, inputType, taskid);
+    create_input(localArray, local_size, input_type, taskid);
 
     // end data_init_runtime
     CALI_MARK_END("data_init_runtime");
@@ -296,7 +295,7 @@ int main(int argc, char* argv[]) {
 
     CALI_MARK_BEGIN("comp");
     // partition local arrays into buckets based on splitters
-    // Allocate send_counts and send_displs
+    // allocate send_counts and send_displs
     int* send_counts = new int[num_procs]();
     for(int i = 0; i < local_size; i++) {
         int bucket = 0;
@@ -306,27 +305,27 @@ int main(int argc, char* argv[]) {
         send_counts[bucket]++;
     }
 
-    // Calculate send_displs
+    // calculate send_displs
     int* send_displs = new int[num_procs];
     send_displs[0] = 0;
     for(int i = 1; i < num_procs; i++) {
         send_displs[i] = send_displs[i-1] + send_counts[i-1];
     }
 
-    // Allocate send_buffer
+    // allocate send_buffer
     int total_send = 0;
     for(int i = 0; i < num_procs; i++) {
         total_send += send_counts[i];
     }
     int* send_buffer = new int[total_send];
 
-    // Initialize current positions for each bucket
+    // initialize current positions for each bucket
     int* current_positions = new int[num_procs];
     for(int i = 0; i < num_procs; i++) {
         current_positions[i] = send_displs[i];
     }
 
-    // Populate send_buffer
+    // populate send_buffer
     for(int i = 0; i < local_size; i++) {
         int bucket = 0;
         while(bucket < (num_procs - 1) && localArray[i] > splitters[bucket]){
@@ -340,7 +339,7 @@ int main(int argc, char* argv[]) {
     CALI_MARK_BEGIN("comm");
 
     // exchange buckets between processes
-    // All-to-all communication to get recv_counts
+    // all-to-all communication to get recv_counts
     int* recv_counts_array = new int[num_procs];
     CALI_MARK_BEGIN("comm_small");
     CALI_MARK_BEGIN("MPI_Alltoall");
@@ -352,7 +351,7 @@ int main(int argc, char* argv[]) {
     CALI_MARK_BEGIN("comp");
     CALI_MARK_BEGIN("comp_small");
 
-    // Calculate recv_displs and total_recv
+    // calculate recv_displs and total_recv
     int* recv_displs = new int[num_procs];
     recv_displs[0] = 0;
     for(int i = 1; i < num_procs; i++) {
@@ -367,10 +366,10 @@ int main(int argc, char* argv[]) {
     CALI_MARK_END("comp");
 
     CALI_MARK_BEGIN("comm");
-    // Allocate recv_buffer
+    // allocate recv_buffer
     int* recv_buffer = new int[total_recv];
 
-    // Perform all-to-all variable communication  
+    // perform all-to-all variable communication  
     CALI_MARK_BEGIN("comm_small");
     CALI_MARK_BEGIN("MPI_Alltoallv");
     MPI_Alltoallv(send_buffer, send_counts, send_displs, MPI_INT,
@@ -485,5 +484,5 @@ int main(int argc, char* argv[]) {
     CALI_MARK_END("MPI_Finalize");
 
     CALI_MARK_END("main");
-}
-// end main
+} // end main
+
