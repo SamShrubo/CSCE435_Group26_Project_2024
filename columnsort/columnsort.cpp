@@ -63,23 +63,23 @@ void block_transpose(std::vector<int>&local_vector, int r, int p, int rank,  MPI
      r = 2
 
      Transpose Example:
-	a0 b0 c0
-	a1 b1 c1
+	    a0 b0 c0
+	    a1 b1 c1
 
      Matrix Index view:
         0 1 2 = rank  
        -------|------
- 	0 2 4 | i = 0
-	1 3 5 | i = 1
+ 	    0 2 4 | i = 0
+	    1 3 5 | i = 1
 
      Result:
-	a0 a1 b0
-	b1 c0 c1
+	    a0 a1 b0
+	    b1 c0 c1
 
      Untranspose Example:
      	a0 b0
-	a1 b1
-	a2 b2
+	    a1 b1
+	    a2 b2
 
      Matrix Index view:
         0 1 = rank
@@ -89,9 +89,9 @@ void block_transpose(std::vector<int>&local_vector, int r, int p, int rank,  MPI
         4 5 | i = 2       2 5
 
      Result:
-	a0 b1
-	b0 a2
-	a1 b2
+	    a0 b1
+	    b0 a2
+	    a1 b2
     */
 
     struct Instruction {
@@ -106,9 +106,9 @@ void block_transpose(std::vector<int>&local_vector, int r, int p, int rank,  MPI
     for (int i = 0; i < r; ++i) {
         if (!reverse) {
             matrix_index = rank * r + i;
-	    target_rank = matrix_index % p;
+	        target_rank = matrix_index % p;
 	    //printf("[NORMAL] target_rank: %d = %d / %d", target_rank, matrix_index, p);
-	    target_index = matrix_index / p;
+	        target_index = matrix_index / p;
 	} else {
 	    matrix_index = p * i + rank;
 	    target_rank = matrix_index / r;
