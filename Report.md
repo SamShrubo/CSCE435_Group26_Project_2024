@@ -967,6 +967,27 @@ Data for 2^26 exists for num_procs 2 and 32 only, all other processor counts fai
 Overall, column sort doesn't speedup much after hitting 32 processors. On paper it should scale well, but I was never able to finish running any data on 512 or 1024, which tells me the actual implementation struggles with out of memory errors and an increase in communication costs. (currently, each value not changing position within its own rank sends data to another rank, I tried to optimize this but ran out of time)
 
 #### Bitonic Sort Performance Evaluation:
-```
-Content to be added later
-```
+1024 processors tasks are impossible run because of hydra issues, 2^28 are way too expensive to run with my algorithm, and I'm at risk of going into credit debt. I was able to get some data point for 2^26, but not too much. I tried 3 methods of communicating data to the main worker, however each have their own issue that was bottlenecking the speedup.
+##### Graphs 
+![alt text](Graphs/bitonics/whole65536.png)
+![alt text](Graphs/bitonics/whole262144.png)
+![alt text](Graphs/bitonics/whole1048576.png)
+![alt text](Graphs/bitonics/whole4194304.png)
+![alt text](Graphs/bitonics/whole16777216.png)
+![alt text](Graphs/bitonics/whole67108864.png)
+There is a really strong and consistent exponentially negative trend in every graph. There is basically no variations between the different types of array inputs. This makes sense since bitonic sort performs the same amount of comparisons regardless of how the data is arranged in the array.
+![alt text](Graphs/comm65536.png)
+![alt text](Graphs/comm262144.png)
+![alt text](Graphs/comm1048576.png)
+![alt text](Graphs/comm4194304.png)
+![alt text](Graphs/comm16777216.png)
+![alt text](Graphs/comm67108864.png)
+Again there is a really strong and consistent exponentially negative trend in every graph. My hypothesis is that with more processors, communication routing get more complicated, which increases runtime and decreases speed up. Speed up is also higher when the input array size gets larger, this could be due to locality. A single processor might not be able to fit all the data in it's memory, which causes page fault and slows down the communication runtime. Whereas more processors could might smaller segments of the array in their memory.
+![alt text](Graphs/comp65536.png)
+![alt text](Graphs/comp262144.png)
+![alt text](Graphs/comp1048576.png)
+![alt text](Graphs/comp4194304.png)
+![alt text](Graphs/comp16777216.png)
+![alt text](Graphs/comp67108864.png)
+The speed up for the comparisons is a strong linear relationship with no downward or upward trend. Since the number of comparisons being made is still the same, just split across multiple processors, the runtime is consistent throughout.
+
