@@ -813,39 +813,39 @@ I had issues running jobs with 512 and 1024 processors on Grace. Hydra consisten
 
 
 ##### 2^16 array element graphs
-![Alt text](Graphs/samplesort_main_65536.png)
-![Alt text](Graphs/samplesort_comp_65536.png)
-![Alt text](Graphs/samplesort_comm_65536.png)
+![Alt text](Graphs/samplesort/samplesort_main_65536.png)
+![Alt text](Graphs/samplesort/samplesort_comp_65536.png)
+![Alt text](Graphs/samplesort/samplesort_comm_65536.png)
 - Computation time decreases as the number of processors increases while the computation time increases. Overall, the general pattern of runtimes is that the runtime decreases as the number of processors increases, but there is a point of dimininishing returns at smaller input sizes. 
 
 ##### 2^18 array element graphs
-![Alt text](Graphs/samplesort_main_262144.png)
-![Alt text](Graphs/samplesort_comp_262144.png)
-![Alt text](Graphs/samplesort_comm_262144.png)
+![Alt text](Graphs/samplesort/samplesort_main_262144.png)
+![Alt text](Graphs/samplesort/samplesort_comp_262144.png)
+![Alt text](Graphs/samplesort/samplesort_comm_262144.png)
 - Computation time decreases as the number of processors increases while the computation time increases. Communication had strange spikes for the 1% perturbed and reverse sorted inputs. The sorted input had a consistently low communication time due to array objects not having to be sent between buckets. 
 
 ##### 2^20 array element graphs
-![Alt text](Graphs/samplesort_main_1048576.png)
-![Alt text](Graphs/samplesort_comp_1048576.png)
-![Alt text](Graphs/samplesort_comm_1048576.png)
+![Alt text](Graphs/samplesort/samplesort_main_1048576.png)
+![Alt text](Graphs/samplesort/samplesort_comp_1048576.png)
+![Alt text](Graphs/samplesort/samplesort_comm_1048576.png)
 - Computation and communication times generally decrease as the number of processors increase. Overall, the general pattern of runtimes is that the runtime decreases as the number of processors increases. All data in these graphs looks as expected. 
 
 ##### 2^22 array element graphs
-![Alt text](Graphs/samplesort_main_4194304.png)
-![Alt text](Graphs/samplesort_comp_4194304.png)
-![Alt text](Graphs/samplesort_comm_4194304.png)
+![Alt text](Graphs/samplesort/samplesort_main_4194304.png)
+![Alt text](Graphs/samplesort/samplesort_comp_4194304.png)
+![Alt text](Graphs/samplesort/samplesort_comm_4194304.png)
 - There are holes in this graph due to the excessive time that the 2 and 4 processor jobs take with 2^22 array elements as inputs. In general, computation and communication times generally decrease as the number of processors increase.
 
 ##### 2^24 array element graphs
-![Alt text](Graphs/samplesort_main_16777216.png)
-![Alt text](Graphs/samplesort_comp_16777216.png)
-![Alt text](Graphs/samplesort_comm_16777216.png)
+![Alt text](Graphs/samplesort/samplesort_main_16777216.png)
+![Alt text](Graphs/samplesort/samplesort_comp_16777216.png)
+![Alt text](Graphs/samplesort/samplesort_comm_16777216.png)
 - Performance time appears to decrease as the number of processors increases. More time is spent communicating than performing computations. 
 
 ##### 2^26 array element graphs
-![Alt text](Graphs/samplesort_main_67108864.png)
-![Alt text](Graphs/samplesort_comp_67108864.png)
-![Alt text](Graphs/samplesort_comm_67108864.png)
+![Alt text](Graphs/samplesort/samplesort_main_67108864.png)
+![Alt text](Graphs/samplesort/samplesort_comp_67108864.png)
+![Alt text](Graphs/samplesort/samplesort_comm_67108864.png)
 - The only job that has been run with a 2^26 array input size was the 1024 process job. There is no other data to compare this point against. Comparatively, the most time was spent communicating, not performing computations. 
 
 ##### 2^28 array element graphs
