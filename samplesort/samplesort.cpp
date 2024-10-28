@@ -117,9 +117,6 @@ void printArray(int* arr, int size, int rank) {
 int main(int argc, char* argv[]) {
     CALI_CXX_MARK_FUNCTION;
 
-    // Main start
-    CALI_MARK_BEGIN("main");
-
     // Input should be size of array (exponent) and input type
     int exponent, array_size;
     string inputType;
@@ -386,57 +383,34 @@ int main(int argc, char* argv[]) {
     CALI_MARK_END("comp_large");
     CALI_MARK_END("comp");
 
-    // gather sorted subarrays back to master process
-    int* recv_counts_gathered = NULL;
-    int* recv_displs_gathered = NULL;
-    if(taskid == MASTER){
-        recv_counts_gathered = new int[num_procs];
+    // local correctness check on recv_buffer
+    CALI_MARK_BEGIN("correctness_check_local");
+    bool local_correct = correctness_check(recv_buffer, total_recv);
+    CALI_MARK_END("correctness_check_local");
+
+    // Convert boolean to integer for MPI_Reduce
+    int local_correct_int = 0;
+    if(local_correct) { // if correctly sorted, update the int value
+        local_correct_int = 1;
     }
+    int global_correct_int = 0;
 
-    CALI_MARK_BEGIN("comm");
-    CALI_MARK_BEGIN("comm_large");
-    CALI_MARK_BEGIN("MPI_Gather");
-    MPI_Gather(&total_recv, 1, MPI_INT, recv_counts_gathered, 1, MPI_INT, MASTER, MPI_COMM_WORLD);
-    CALI_MARK_END("MPI_Gather");
-    CALI_MARK_END("comm_large");
-    CALI_MARK_END("comm");
-
-    if(taskid == MASTER){
-        recv_displs_gathered = new int[num_procs];
-        recv_displs_gathered[0] = 0;
-        for(int i = 1; i < num_procs; i++) {
-            recv_displs_gathered[i] = recv_displs_gathered[i-1] + recv_counts_gathered[i-1];
-        }
-    }
-
-    int* sortedArray = NULL;
-    if(taskid == MASTER) {
-        sortedArray = new int[array_size];
-    }
-
-    CALI_MARK_BEGIN("comm");
+    // Reduce all local_correct_int to determine global correctness
+    // communicate result of correctness check back to main
     CALI_MARK_BEGIN("comm_small");
-    CALI_MARK_BEGIN("MPI_Gatherv");
-    MPI_Gatherv(recv_buffer, total_recv, MPI_INT,
-                sortedArray, recv_counts_gathered, recv_displs_gathered, MPI_INT,
-                MASTER, MPI_COMM_WORLD);
-    CALI_MARK_END("MPI_Gatherv");
+    CALI_MARK_BEGIN("MPI_Reduce");
+    MPI_Reduce(&local_correct_int, &global_correct_int, 1, MPI_INT, MPI_LAND, MASTER, MPI_COMM_WORLD);
+    CALI_MARK_END("MPI_Reduce");
     CALI_MARK_END("comm_small");
-    CALI_MARK_END("comm");
 
-    bool correct_check = true;
-    if(taskid == MASTER) {
-        // correctness_check start
-        CALI_MARK_BEGIN("correctness_check");
-        // call correctness_check
-        correct_check = correctness_check(sortedArray, array_size);  
-        if(correct_check) { // if true, sorting worked
+    // main outputs the result of correctness check
+    if(taskid == MASTER){
+        bool overall_correct = (global_correct_int != 0);
+        if(overall_correct) { // if true, sorting worked on all processes
             printf("\nSamplesort was successful.\n");
-        } else { // if false, sorting was not successful
+        } else { // if false, at least one process failed the correctness check
             printf("\nSamplesort was NOT successful.\n");
         }
-        // end correctness_check
-        CALI_MARK_END("correctness_check");
     }
 
     // Required adiak code
@@ -473,16 +447,10 @@ int main(int argc, char* argv[]) {
     delete[] recv_counts_array;
     delete[] recv_displs;
     delete[] recv_buffer;
-    if(taskid == MASTER){
-        delete[] recv_counts_gathered;
-        delete[] recv_displs_gathered;
-        delete[] sortedArray;
-    }
 
     CALI_MARK_BEGIN("MPI_Finalize");
     MPI_Finalize();
     CALI_MARK_END("MPI_Finalize");
 
-    CALI_MARK_END("main");
 } // end main
 
