@@ -76,32 +76,13 @@ void create_input(int *localArray, int local_size, const std::string& input_type
         create_reverse_sorted(localArray, rank, local_size);
     } else if (input_type == "1_perc_perturbed") { // 1% perturbed
         create_one_percent_perturbed(localArray, rank, local_size);
+    } else {
+      printf("invalid input\n");
     }
 }
 
-// referenced from https://www.geeksforgeeks.org/cpp-program-for-quicksort/
-// with slight adjustments to use an int array instead of vector<int>
-int partition(int* arr, int low, int high){
-    int pivot = arr[high];
-    int i = (low - 1);
-    for (int j = low; j <= high - 1; j++) {
-        if (arr[j] <= pivot) {
-            i++;
-            std::swap(arr[i], arr[j]);
-        }
-    }
-    std::swap(arr[i + 1], arr[high]);
-    return (i + 1);
-}
-
-// referenced from https://www.geeksforgeeks.org/cpp-program-for-quicksort/
-// with slight adjustments to use an int array instead of vector<int>
-void quicksort(int *localArray, int low, int high) {
-    if(low < high) {
-        int pi = partition(localArray, low, high);
-        quicksort(localArray, low, pi-1);
-        quicksort(localArray, pi+1, high);
-    }
+void sort_local_array(int *localArray, int local_size) {
+    std::sort(localArray, localArray + local_size);
 }
 
 void printArray(int* arr, int size, int rank) {
@@ -156,7 +137,7 @@ int main(int argc, char* argv[]) {
         input_type, // choices: "Sorted", "Random", "Reverse sorted", "1% perturbed"
         scalability = "strong", // choices: "weak", "strong"
         implementation_source = "AI and Online"; // choices: ("online", "ai", "handwritten")
-        // online sources: Class Notes, https://www.geeksforgeeks.org/cpp-program-for-quicksort/ and https://en.wikipedia.org/wiki/Samplesort#:~:text=sequential%%2C%%20sorting%%20algorithm.-,Pseudocode,-%5Bedit%5D)
+        // online sources: Class Notes, https://en.wikipedia.org/wiki/Samplesort#:~:text=sequential%%2C%%20sorting%%20algorithm.-,Pseudocode,-%5Bedit%5D)
     int 
         group_number = 26,
         size_of_data_type = sizeof(int),
@@ -201,25 +182,32 @@ int main(int argc, char* argv[]) {
     CALI_MARK_BEGIN("data_init_runtime");
     int local_size = array_size / numtasks;
     int* localArray = new int[local_size];
+    if(localArray == nullptr){
+      fprintf(stderr, "Memory allocation failed for localArray on process %d\n", taskid);
+      MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+    }
 
     // distribute elements of array to m buckets
     // generate arrays in each process
-    create_input(localArray, local_size, input_type, taskid);
+    create_input(localArray, local_size, inputType, taskid);
 
     // end data_init_runtime
     CALI_MARK_END("data_init_runtime");
 
-    // sort each local array with quicksort
+    // sort each local array
     CALI_MARK_BEGIN("comp");
     CALI_MARK_BEGIN("comp_small"); 
     // using small computation because only local arrays are involved
-    quicksort(localArray, 0, local_size-1);
+    sort_local_array(localArray, local_size);
     CALI_MARK_END("comp_small");
 
     // draw sample of size s
     CALI_MARK_BEGIN("comp_small");
     // sample 10% of elements in each array
     double sampling_fraction = 0.1; 
+    if(num_procs > 200){
+        sampling_fraction = 0.2; // increase sample size 
+    }
     int sample_size = std::max(1, static_cast<int>(std::round(local_size * sampling_fraction)));
     sample_size = std::min(sample_size, local_size); 
 
@@ -261,11 +249,11 @@ int main(int argc, char* argv[]) {
 
     // master sorts sample and selects m-1 elements to be splitters
     int* splitters = new int[num_procs - 1];
-    if(taskid == MASTER){ 
+    if(taskid == MASTER) { 
         CALI_MARK_BEGIN("comp_small");
         // gathered_sample is of size sample_size * num_procs
         int gathered_sample_size = sample_size * num_procs;
-        quicksort(gathered_sample, 0, gathered_sample_size - 1);
+        std::sort(gathered_sample, gathered_sample + gathered_sample_size);
 
         for(int i = 1; i < num_procs; i++) {
             int sample_index = i * sample_size - 1; 
@@ -275,7 +263,6 @@ int main(int argc, char* argv[]) {
             }
             splitters[i-1] = gathered_sample[sample_index];
         }
-
         CALI_MARK_END("comp_small");
     }
 
@@ -379,14 +366,14 @@ int main(int argc, char* argv[]) {
     // sort received buckets
     CALI_MARK_BEGIN("comp");
     CALI_MARK_BEGIN("comp_large");
-    quicksort(recv_buffer, 0, total_recv - 1);
+    std::sort(recv_buffer, recv_buffer + total_recv);
     CALI_MARK_END("comp_large");
     CALI_MARK_END("comp");
 
     // local correctness check on recv_buffer
-    CALI_MARK_BEGIN("correctness_check_local");
+    CALI_MARK_BEGIN("correctness_check");
     bool local_correct = correctness_check(recv_buffer, total_recv);
-    CALI_MARK_END("correctness_check_local");
+    CALI_MARK_END("correctness_check");
 
     // Convert boolean to integer for MPI_Reduce
     int local_correct_int = 0;
@@ -411,6 +398,7 @@ int main(int argc, char* argv[]) {
         } else { // if false, at least one process failed the correctness check
             printf("\nSamplesort was NOT successful.\n");
         }
+        
     }
 
     // Required adiak code
