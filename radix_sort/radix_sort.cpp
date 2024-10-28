@@ -51,11 +51,11 @@ void create_sorted_array(std::vector<int> &localArray, int rank, int local_size)
     }
 }
 
-void create_random_array(std::vector<int> &localArray, int rank, int local_size){
+void create_random_array(std::vector<int> &localArray, int rank, int local_size, int n){
     localArray.resize(local_size);
     std::srand(time(0) + rank);
     for(int i = 0; i < local_size; i++) {
-        localArray[i] = std::rand() % RAND_MAX;
+        localArray[i] = std::rand() % (n + 1); 
     }
 }
 
@@ -79,11 +79,11 @@ void create_one_percent_perturbed(std::vector<int> &localArray, int rank, int lo
     }
 }
 
-void create_input(std::vector<int> &localArray, int local_size, int input_type, int rank){
+void create_input(std::vector<int> &localArray, int local_size, int input_type, int rank, int full_size){
     if(input_type == 0) { // sorted
         create_sorted_array(localArray, rank, local_size);
     } else if (input_type == 1) { // random
-        create_random_array(localArray, rank, local_size);
+        create_random_array(localArray, rank, local_size, full_size);
     } else if (input_type == 2) { // reverse sorted
         create_reverse_sorted(localArray, rank, local_size);
     } else if (input_type == 3) { // 1% perturbed
@@ -136,7 +136,7 @@ int main(int argc, char* argv[]) {
     srand(time(NULL) + taskid);
     CALI_MARK_BEGIN("data-init-runtime");
     std::vector<int> arr(sizeOfLocalArray);
-    create_input(arr, sizeOfLocalArray, inputType, taskid);
+    create_input(arr, sizeOfLocalArray, inputType, taskid, sizeOfArray);
     CALI_MARK_END("data-init-runtime");
   
     // Find local maximum
@@ -182,9 +182,9 @@ int main(int argc, char* argv[]) {
 
         int digitPlacement = static_cast<int>(pow(10, d));
         CALI_MARK_BEGIN("comp");
-        CALI_MARK_BEGIN("comp-small");
+        CALI_MARK_BEGIN("comp-large");
         counting_sort(arr.data(), sizeOfLocalArray, digitPlacement, buckets);
-        CALI_MARK_END("comp-small");
+        CALI_MARK_END("comp-large");
         CALI_MARK_END("comp");
     
 
@@ -214,45 +214,44 @@ int main(int argc, char* argv[]) {
         CALI_MARK_END("comp-large");
         CALI_MARK_END("comp");
         
-        
+        CALI_MARK_BEGIN("comm");
+        CALI_MARK_BEGIN("comm-small");
         MPI_Barrier(MPI_COMM_WORLD);
+        CALI_MARK_END("comm-small");
+        CALI_MARK_END("comm");
         
         int digitIndex[2];
         int digit, leastDigit, destIdx, destProcess, localDestIdx;
+
+        CALI_MARK_BEGIN("comp");
+        CALI_MARK_BEGIN("comp-large");
         for (int i = 0; i < sizeOfLocalArray; i++)
         {
-            CALI_MARK_BEGIN("comp");
-            CALI_MARK_BEGIN("comp-small");
+            
             digit = arr[i];
             leastDigit = (arr[i] / digitPlacement) % 10;
-
             destIdx = allDigitsPrefixTotal[leastDigit] - allDigitsTotal[leastDigit] + allDigitsLeftTotal[leastDigit] + LeastDigitTracking[leastDigit];
-            
             
             LeastDigitTracking[leastDigit]++;
             destProcess = destIdx / sizeOfLocalArray; 
 
             digitIndex[0] = digit;
             digitIndex[1] = destIdx; 
-            CALI_MARK_END("comp-small");
-            CALI_MARK_END("comp");
-            
-          
+
             CALI_MARK_BEGIN("comm");
             CALI_MARK_BEGIN("comm-large");
             MPI_Send(&digitIndex, 2, MPI_INT, destProcess, 0, MPI_COMM_WORLD);
             MPI_Recv(digitIndex, 2, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
             CALI_MARK_END("comm-large");
             CALI_MARK_END("comm");
-        
-            CALI_MARK_BEGIN("comp");
-            CALI_MARK_BEGIN("comp-small");
+
             localDestIdx = digitIndex[1] % sizeOfLocalArray; 
             localBuffer[localDestIdx] = digitIndex[0]; 
-            CALI_MARK_END("comp-small");
-            CALI_MARK_END("comp");
-        
+            
         }
+        CALI_MARK_END("comp-large");
+        CALI_MARK_END("comp");
+
         CALI_MARK_BEGIN("comp");
         CALI_MARK_BEGIN("comp-small");
         for (int i = 0; i < sizeOfLocalArray; i++)
@@ -262,7 +261,11 @@ int main(int argc, char* argv[]) {
         CALI_MARK_END("comp-small");
         CALI_MARK_END("comp");
         
+        CALI_MARK_BEGIN("comp");
+        CALI_MARK_BEGIN("comp-small");
         MPI_Barrier(MPI_COMM_WORLD);
+        CALI_MARK_END("comp-small");
+        CALI_MARK_END("comp");
     }
     delete[] localBuffer;
     delete[] allBuckets;
