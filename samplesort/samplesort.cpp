@@ -161,17 +161,9 @@ int main(int argc, char* argv[]) {
     // Processor counts: 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024
 
     // offical start of program
-    CALI_MARK_BEGIN("MPI_Init");
     MPI_Init(&argc, &argv);
-    CALI_MARK_END("MPI_Init");
-
-    CALI_MARK_BEGIN("MPI_Comm_rank");
     MPI_Comm_rank(MPI_COMM_WORLD, &taskid);
-    CALI_MARK_END("MPI_Comm_rank");
-
-    CALI_MARK_BEGIN("MPI_Comm_size");
     MPI_Comm_size(MPI_COMM_WORLD, &numtasks);
-    CALI_MARK_END("MPI_Comm_size");
 
     num_procs = numtasks;
 
@@ -234,13 +226,10 @@ int main(int argc, char* argv[]) {
 
     // create a dummy buffer for non-master processes
     int dummy = 0;
-
-    CALI_MARK_BEGIN("MPI_Gather");
     // Corrected MPI_Gather call with valid recvbuf for all processes
     MPI_Gather(local_sample, sample_size, MPI_INT, 
                (taskid == MASTER) ? gathered_sample : &dummy, 
                sample_size, MPI_INT, MASTER, MPI_COMM_WORLD);
-    CALI_MARK_END("MPI_Gather");
 
     CALI_MARK_END("comm_large");
     CALI_MARK_END("comm");
@@ -271,9 +260,7 @@ int main(int argc, char* argv[]) {
     // globally broadcast splitters to all processes
     CALI_MARK_BEGIN("comm");
     CALI_MARK_BEGIN("comm_large");
-    CALI_MARK_BEGIN("MPI_Bcast");
     MPI_Bcast(splitters, num_procs - 1, MPI_INT, MASTER, MPI_COMM_WORLD);
-    CALI_MARK_END("MPI_Bcast");
     CALI_MARK_END("comm_large");
     CALI_MARK_END("comm");
 
@@ -326,9 +313,7 @@ int main(int argc, char* argv[]) {
     // all-to-all communication to get recv_counts
     int* recv_counts_array = new int[num_procs];
     CALI_MARK_BEGIN("comm_small");
-    CALI_MARK_BEGIN("MPI_Alltoall");
     MPI_Alltoall(send_counts, 1, MPI_INT, recv_counts_array, 1, MPI_INT, MPI_COMM_WORLD);
-    CALI_MARK_END("MPI_Alltoall");
     CALI_MARK_END("comm_small");
     CALI_MARK_END("comm");
 
@@ -355,11 +340,9 @@ int main(int argc, char* argv[]) {
 
     // perform all-to-all variable communication  
     CALI_MARK_BEGIN("comm_small");
-    CALI_MARK_BEGIN("MPI_Alltoallv");
     MPI_Alltoallv(send_buffer, send_counts, send_displs, MPI_INT,
                  recv_buffer, recv_counts_array, recv_displs, MPI_INT,
                  MPI_COMM_WORLD);
-    CALI_MARK_END("MPI_Alltoallv");
     CALI_MARK_END("comm_small");
     CALI_MARK_END("comm");
 
@@ -369,6 +352,8 @@ int main(int argc, char* argv[]) {
     std::sort(recv_buffer, recv_buffer + total_recv);
     CALI_MARK_END("comp_large");
     CALI_MARK_END("comp");
+
+    // program is complete, start local correctness check
 
     // local correctness check on recv_buffer
     CALI_MARK_BEGIN("correctness_check");
@@ -384,11 +369,7 @@ int main(int argc, char* argv[]) {
 
     // Reduce all local_correct_int to determine global correctness
     // communicate result of correctness check back to main
-    CALI_MARK_BEGIN("comm_small");
-    CALI_MARK_BEGIN("MPI_Reduce");
     MPI_Reduce(&local_correct_int, &global_correct_int, 1, MPI_INT, MPI_LAND, MASTER, MPI_COMM_WORLD);
-    CALI_MARK_END("MPI_Reduce");
-    CALI_MARK_END("comm_small");
 
     // main outputs the result of correctness check
     if(taskid == MASTER){
@@ -436,9 +417,7 @@ int main(int argc, char* argv[]) {
     delete[] recv_displs;
     delete[] recv_buffer;
 
-    CALI_MARK_BEGIN("MPI_Finalize");
     MPI_Finalize();
-    CALI_MARK_END("MPI_Finalize");
 
 } // end main
 
