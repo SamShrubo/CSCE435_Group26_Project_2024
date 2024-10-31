@@ -1,0 +1,26 @@
+  _____ _     _      _        _   
+ |_   _| |__ (_) ___| | _____| |_ 
+   | | | '_ \| |/ __| |/ / _ \ __|
+   | | | | | | | (__|   <  __/ |_ 
+   |_| |_| |_|_|\___|_|\_\___|\__|  v2024.1.0
+
+0.614 main
+└─ 0.614 main
+   ├─ 0.002 create_matrix
+   ├─ 0.000 gather_final
+   ├─ 0.000 step1_sort
+   ├─ 0.001 step2_transpose
+   ├─ 0.000 step3_sort
+   ├─ 0.002 step4_transpose
+   ├─ 0.000 step5_sort
+   ├─ 0.000 step6_shift
+   ├─ 0.000 step7_sort
+   └─ 0.000 step8_unshift
+
+Legend (Metric: Avg time/rank Min: 0.00 Max: 0.61 indices: {'profile': 202565079})
+█ 0.55 - 0.61
+█ 0.43 - 0.55
+█ 0.31 - 0.43
+█ 0.18 - 0.31
+█ 0.06 - 0.18
+█ 0.00 - 0.06

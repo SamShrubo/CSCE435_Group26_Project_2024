@@ -1,0 +1,38 @@
+           cali.caliper.version  mpi.world.size  \
+profile                                           
+3298923211               2.11.0               4   
+                                                 spot.metrics  \
+profile                                                         
+3298923211  min#inclusive#sum#time.duration,max#inclusive#...   
+          spot.timeseries.metrics  spot.format.version  \
+profile                                                   
+3298923211                                            2   
+
+                                                 spot.options  spot.channels  \
+profile                                                                        
+3298923211  time.variance,profile.mpi,node.order,region.co...  regionprofile   
+
+           cali.channel spot:node.order spot:output spot:profile.mpi  \
+profile                                                                
+3298923211         spot            true   p4-a.cali             true   
+
+           spot:region.count spot:time.exclusive spot:time.variance  \
+profile                                                               
+3298923211              true                true               true   
+
+           		 launchdate                     libraries  \
+profile                                                                     
+3298923211  1729089290  [/scratch/group/csce435-f24/Caliper/caliper/li...   
+
+                        cmdline cluster algorithm programming_model data_type  \
+profile                                                                         
+3298923211  [./radix_sort, 256]       c     radix               mpi       int   
+
+            size_of_data_type  input_size input_type  num_procs scalability  \
+profile                                                                       
+3298923211                  4         256     Random          4      strong   
+
+            group_num implementation_source  
+profile                                      
+3298923211         26           online & ai  
+

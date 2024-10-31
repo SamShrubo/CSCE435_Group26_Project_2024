@@ -38,43 +38,6 @@ void print_matrix(const std::vector<int>& matrix, int r, int p) {
 }
 
 void block_transpose(std::vector<int>&local_vector, int r, int p, int rank,  MPI_Comm comm, bool reverse) {
-    /*
- 
-     p = 3
-     r = 2
-
-     Transpose Example:
-	    a0 b0 c0
-	    a1 b1 c1
-
-     Matrix Index view:
-        0 1 2 = rank  
-       -------|------
- 	    0 2 4 | i = 0
-	    1 3 5 | i = 1
-
-     Result:
-	    a0 a1 b0
-	    b1 c0 c1
-
-     Untranspose Example:
-     	a0 b0
-	    a1 b1
-	    a2 b2
-
-     Matrix Index view:
-        0 1 = rank
-       -----|------
-        0 1 | i = 0       0 3
-        2 3 | i = 1  -->  1 4
-        4 5 | i = 2       2 5
-
-     Result:
-	    a0 b1
-	    b0 a2
-	    a1 b2
-    */
-
     struct Instruction {
         int value;
 	int index;

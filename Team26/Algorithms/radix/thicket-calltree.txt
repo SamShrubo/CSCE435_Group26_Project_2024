@@ -1,0 +1,22 @@
+0.030 main
+├─ 0.000 data-init-runtime
+├─ 0.017 comm
+│  ├─ 0.002 comm-small
+│  │  ├─ 0.001 MPI_Allreduce
+│  │  └─ 0.000 MPI_Allgather
+│  └─ 0.013 comm-large
+│     ├─ 0.001 MPI_Send
+│     └─ 0.010 MPI_Recv
+├─ 0.005 comp
+│  ├─ 0.002 comp-small
+│  └─ 0.000 comp-large
+├─ 0.006 MPI_Barrier
+└─ 0.000 correctness-check
+   ├─ 0.000 MPI_Send
+   ├─ 0.000 MPI_Recv
+   ├─ 0.000 MPI_Allreduce
+   └─ 0.000 MPI_Barrier
+0.000 MPI_Finalize
+0.000 MPI_Initialized
+0.000 MPI_Finalized
+0.001 MPI_Comm_dup
