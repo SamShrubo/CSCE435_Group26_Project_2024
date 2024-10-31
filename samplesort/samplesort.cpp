@@ -76,32 +76,13 @@ void create_input(int *localArray, int local_size, const std::string& input_type
         create_reverse_sorted(localArray, rank, local_size);
     } else if (input_type == "1_perc_perturbed") { // 1% perturbed
         create_one_percent_perturbed(localArray, rank, local_size);
+    } else {
+      printf("invalid input\n");
     }
 }
 
-// referenced from https://www.geeksforgeeks.org/cpp-program-for-quicksort/
-// with slight adjustments to use an int array instead of vector<int>
-int partition(int* arr, int low, int high){
-    int pivot = arr[high];
-    int i = (low - 1);
-    for (int j = low; j <= high - 1; j++) {
-        if (arr[j] <= pivot) {
-            i++;
-            std::swap(arr[i], arr[j]);
-        }
-    }
-    std::swap(arr[i + 1], arr[high]);
-    return (i + 1);
-}
-
-// referenced from https://www.geeksforgeeks.org/cpp-program-for-quicksort/
-// with slight adjustments to use an int array instead of vector<int>
-void quicksort(int *localArray, int low, int high) {
-    if(low < high) {
-        int pi = partition(localArray, low, high);
-        quicksort(localArray, low, pi-1);
-        quicksort(localArray, pi+1, high);
-    }
+void sort_local_array(int *localArray, int local_size) {
+    std::sort(localArray, localArray + local_size);
 }
 
 void printArray(int* arr, int size, int rank) {
@@ -116,9 +97,6 @@ void printArray(int* arr, int size, int rank) {
 // Perform sample sort in parallel
 int main(int argc, char* argv[]) {
     CALI_CXX_MARK_FUNCTION;
-
-    // Main start
-    CALI_MARK_BEGIN("main");
 
     // Input should be size of array (exponent) and input type
     int exponent, array_size;
@@ -159,7 +137,7 @@ int main(int argc, char* argv[]) {
         input_type, // choices: "Sorted", "Random", "Reverse sorted", "1% perturbed"
         scalability = "strong", // choices: "weak", "strong"
         implementation_source = "AI and Online"; // choices: ("online", "ai", "handwritten")
-        // online sources: Class Notes, https://www.geeksforgeeks.org/cpp-program-for-quicksort/ and https://en.wikipedia.org/wiki/Samplesort#:~:text=sequential%%2C%%20sorting%%20algorithm.-,Pseudocode,-%5Bedit%5D)
+        // online sources: Class Notes, https://en.wikipedia.org/wiki/Samplesort#:~:text=sequential%%2C%%20sorting%%20algorithm.-,Pseudocode,-%5Bedit%5D)
     int 
         group_number = 26,
         size_of_data_type = sizeof(int),
@@ -183,17 +161,9 @@ int main(int argc, char* argv[]) {
     // Processor counts: 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024
 
     // offical start of program
-    CALI_MARK_BEGIN("MPI_Init");
     MPI_Init(&argc, &argv);
-    CALI_MARK_END("MPI_Init");
-
-    CALI_MARK_BEGIN("MPI_Comm_rank");
     MPI_Comm_rank(MPI_COMM_WORLD, &taskid);
-    CALI_MARK_END("MPI_Comm_rank");
-
-    CALI_MARK_BEGIN("MPI_Comm_size");
     MPI_Comm_size(MPI_COMM_WORLD, &numtasks);
-    CALI_MARK_END("MPI_Comm_size");
 
     num_procs = numtasks;
 
@@ -204,25 +174,32 @@ int main(int argc, char* argv[]) {
     CALI_MARK_BEGIN("data_init_runtime");
     int local_size = array_size / numtasks;
     int* localArray = new int[local_size];
+    if(localArray == nullptr){
+      fprintf(stderr, "Memory allocation failed for localArray on process %d\n", taskid);
+      MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+    }
 
     // distribute elements of array to m buckets
     // generate arrays in each process
-    create_input(localArray, local_size, input_type, taskid);
+    create_input(localArray, local_size, inputType, taskid);
 
     // end data_init_runtime
     CALI_MARK_END("data_init_runtime");
 
-    // sort each local array with quicksort
+    // sort each local array
     CALI_MARK_BEGIN("comp");
     CALI_MARK_BEGIN("comp_small"); 
     // using small computation because only local arrays are involved
-    quicksort(localArray, 0, local_size-1);
+    sort_local_array(localArray, local_size);
     CALI_MARK_END("comp_small");
 
     // draw sample of size s
     CALI_MARK_BEGIN("comp_small");
     // sample 10% of elements in each array
     double sampling_fraction = 0.1; 
+    if(num_procs > 200){
+        sampling_fraction = 0.2; // increase sample size 
+    }
     int sample_size = std::max(1, static_cast<int>(std::round(local_size * sampling_fraction)));
     sample_size = std::min(sample_size, local_size); 
 
@@ -249,13 +226,10 @@ int main(int argc, char* argv[]) {
 
     // create a dummy buffer for non-master processes
     int dummy = 0;
-
-    CALI_MARK_BEGIN("MPI_Gather");
     // Corrected MPI_Gather call with valid recvbuf for all processes
     MPI_Gather(local_sample, sample_size, MPI_INT, 
                (taskid == MASTER) ? gathered_sample : &dummy, 
                sample_size, MPI_INT, MASTER, MPI_COMM_WORLD);
-    CALI_MARK_END("MPI_Gather");
 
     CALI_MARK_END("comm_large");
     CALI_MARK_END("comm");
@@ -264,11 +238,11 @@ int main(int argc, char* argv[]) {
 
     // master sorts sample and selects m-1 elements to be splitters
     int* splitters = new int[num_procs - 1];
-    if(taskid == MASTER){ 
+    if(taskid == MASTER) { 
         CALI_MARK_BEGIN("comp_small");
         // gathered_sample is of size sample_size * num_procs
         int gathered_sample_size = sample_size * num_procs;
-        quicksort(gathered_sample, 0, gathered_sample_size - 1);
+        std::sort(gathered_sample, gathered_sample + gathered_sample_size);
 
         for(int i = 1; i < num_procs; i++) {
             int sample_index = i * sample_size - 1; 
@@ -278,7 +252,6 @@ int main(int argc, char* argv[]) {
             }
             splitters[i-1] = gathered_sample[sample_index];
         }
-
         CALI_MARK_END("comp_small");
     }
 
@@ -287,9 +260,7 @@ int main(int argc, char* argv[]) {
     // globally broadcast splitters to all processes
     CALI_MARK_BEGIN("comm");
     CALI_MARK_BEGIN("comm_large");
-    CALI_MARK_BEGIN("MPI_Bcast");
     MPI_Bcast(splitters, num_procs - 1, MPI_INT, MASTER, MPI_COMM_WORLD);
-    CALI_MARK_END("MPI_Bcast");
     CALI_MARK_END("comm_large");
     CALI_MARK_END("comm");
 
@@ -342,9 +313,7 @@ int main(int argc, char* argv[]) {
     // all-to-all communication to get recv_counts
     int* recv_counts_array = new int[num_procs];
     CALI_MARK_BEGIN("comm_small");
-    CALI_MARK_BEGIN("MPI_Alltoall");
     MPI_Alltoall(send_counts, 1, MPI_INT, recv_counts_array, 1, MPI_INT, MPI_COMM_WORLD);
-    CALI_MARK_END("MPI_Alltoall");
     CALI_MARK_END("comm_small");
     CALI_MARK_END("comm");
 
@@ -371,72 +340,46 @@ int main(int argc, char* argv[]) {
 
     // perform all-to-all variable communication  
     CALI_MARK_BEGIN("comm_small");
-    CALI_MARK_BEGIN("MPI_Alltoallv");
     MPI_Alltoallv(send_buffer, send_counts, send_displs, MPI_INT,
                  recv_buffer, recv_counts_array, recv_displs, MPI_INT,
                  MPI_COMM_WORLD);
-    CALI_MARK_END("MPI_Alltoallv");
     CALI_MARK_END("comm_small");
     CALI_MARK_END("comm");
 
     // sort received buckets
     CALI_MARK_BEGIN("comp");
     CALI_MARK_BEGIN("comp_large");
-    quicksort(recv_buffer, 0, total_recv - 1);
+    std::sort(recv_buffer, recv_buffer + total_recv);
     CALI_MARK_END("comp_large");
     CALI_MARK_END("comp");
 
-    // gather sorted subarrays back to master process
-    int* recv_counts_gathered = NULL;
-    int* recv_displs_gathered = NULL;
+    // program is complete, start local correctness check
+
+    // local correctness check on recv_buffer
+    CALI_MARK_BEGIN("correctness_check");
+    bool local_correct = correctness_check(recv_buffer, total_recv);
+    CALI_MARK_END("correctness_check");
+
+    // Convert boolean to integer for MPI_Reduce
+    int local_correct_int = 0;
+    if(local_correct) { // if correctly sorted, update the int value
+        local_correct_int = 1;
+    }
+    int global_correct_int = 0;
+
+    // Reduce all local_correct_int to determine global correctness
+    // communicate result of correctness check back to main
+    MPI_Reduce(&local_correct_int, &global_correct_int, 1, MPI_INT, MPI_LAND, MASTER, MPI_COMM_WORLD);
+
+    // main outputs the result of correctness check
     if(taskid == MASTER){
-        recv_counts_gathered = new int[num_procs];
-    }
-
-    CALI_MARK_BEGIN("comm");
-    CALI_MARK_BEGIN("comm_large");
-    CALI_MARK_BEGIN("MPI_Gather");
-    MPI_Gather(&total_recv, 1, MPI_INT, recv_counts_gathered, 1, MPI_INT, MASTER, MPI_COMM_WORLD);
-    CALI_MARK_END("MPI_Gather");
-    CALI_MARK_END("comm_large");
-    CALI_MARK_END("comm");
-
-    if(taskid == MASTER){
-        recv_displs_gathered = new int[num_procs];
-        recv_displs_gathered[0] = 0;
-        for(int i = 1; i < num_procs; i++) {
-            recv_displs_gathered[i] = recv_displs_gathered[i-1] + recv_counts_gathered[i-1];
-        }
-    }
-
-    int* sortedArray = NULL;
-    if(taskid == MASTER) {
-        sortedArray = new int[array_size];
-    }
-
-    CALI_MARK_BEGIN("comm");
-    CALI_MARK_BEGIN("comm_small");
-    CALI_MARK_BEGIN("MPI_Gatherv");
-    MPI_Gatherv(recv_buffer, total_recv, MPI_INT,
-                sortedArray, recv_counts_gathered, recv_displs_gathered, MPI_INT,
-                MASTER, MPI_COMM_WORLD);
-    CALI_MARK_END("MPI_Gatherv");
-    CALI_MARK_END("comm_small");
-    CALI_MARK_END("comm");
-
-    bool correct_check = true;
-    if(taskid == MASTER) {
-        // correctness_check start
-        CALI_MARK_BEGIN("correctness_check");
-        // call correctness_check
-        correct_check = correctness_check(sortedArray, array_size);  
-        if(correct_check) { // if true, sorting worked
+        bool overall_correct = (global_correct_int != 0);
+        if(overall_correct) { // if true, sorting worked on all processes
             printf("\nSamplesort was successful.\n");
-        } else { // if false, sorting was not successful
+        } else { // if false, at least one process failed the correctness check
             printf("\nSamplesort was NOT successful.\n");
         }
-        // end correctness_check
-        CALI_MARK_END("correctness_check");
+        
     }
 
     // Required adiak code
@@ -473,16 +416,8 @@ int main(int argc, char* argv[]) {
     delete[] recv_counts_array;
     delete[] recv_displs;
     delete[] recv_buffer;
-    if(taskid == MASTER){
-        delete[] recv_counts_gathered;
-        delete[] recv_displs_gathered;
-        delete[] sortedArray;
-    }
 
-    CALI_MARK_BEGIN("MPI_Finalize");
     MPI_Finalize();
-    CALI_MARK_END("MPI_Finalize");
 
-    CALI_MARK_END("main");
 } // end main
 

@@ -813,39 +813,39 @@ I had issues running jobs with 512 and 1024 processors on Grace. Hydra consisten
 
 
 ##### 2^16 array element graphs
-![Alt text](Graphs/samplesort_main_65536.png)
-![Alt text](Graphs/samplesort_comp_65536.png)
-![Alt text](Graphs/samplesort_comm_65536.png)
+![Alt text](Graphs/samplesort/samplesort_main_65536.png)
+![Alt text](Graphs/samplesort/samplesort_comp_65536.png)
+![Alt text](Graphs/samplesort/samplesort_comm_65536.png)
 - Computation time decreases as the number of processors increases while the computation time increases. Overall, the general pattern of runtimes is that the runtime decreases as the number of processors increases, but there is a point of dimininishing returns at smaller input sizes. 
 
 ##### 2^18 array element graphs
-![Alt text](Graphs/samplesort_main_262144.png)
-![Alt text](Graphs/samplesort_comp_262144.png)
-![Alt text](Graphs/samplesort_comm_262144.png)
+![Alt text](Graphs/samplesort/samplesort_main_262144.png)
+![Alt text](Graphs/samplesort/samplesort_comp_262144.png)
+![Alt text](Graphs/samplesort/samplesort_comm_262144.png)
 - Computation time decreases as the number of processors increases while the computation time increases. Communication had strange spikes for the 1% perturbed and reverse sorted inputs. The sorted input had a consistently low communication time due to array objects not having to be sent between buckets. 
 
 ##### 2^20 array element graphs
-![Alt text](Graphs/samplesort_main_1048576.png)
-![Alt text](Graphs/samplesort_comp_1048576.png)
-![Alt text](Graphs/samplesort_comm_1048576.png)
+![Alt text](Graphs/samplesort/samplesort_main_1048576.png)
+![Alt text](Graphs/samplesort/samplesort_comp_1048576.png)
+![Alt text](Graphs/samplesort/samplesort_comm_1048576.png)
 - Computation and communication times generally decrease as the number of processors increase. Overall, the general pattern of runtimes is that the runtime decreases as the number of processors increases. All data in these graphs looks as expected. 
 
 ##### 2^22 array element graphs
-![Alt text](Graphs/samplesort_main_4194304.png)
-![Alt text](Graphs/samplesort_comp_4194304.png)
-![Alt text](Graphs/samplesort_comm_4194304.png)
+![Alt text](Graphs/samplesort/samplesort_main_4194304.png)
+![Alt text](Graphs/samplesort/samplesort_comp_4194304.png)
+![Alt text](Graphs/samplesort/samplesort_comm_4194304.png)
 - There are holes in this graph due to the excessive time that the 2 and 4 processor jobs take with 2^22 array elements as inputs. In general, computation and communication times generally decrease as the number of processors increase.
 
 ##### 2^24 array element graphs
-![Alt text](Graphs/samplesort_main_16777216.png)
-![Alt text](Graphs/samplesort_comp_16777216.png)
-![Alt text](Graphs/samplesort_comm_16777216.png)
+![Alt text](Graphs/samplesort/samplesort_main_16777216.png)
+![Alt text](Graphs/samplesort/samplesort_comp_16777216.png)
+![Alt text](Graphs/samplesort/samplesort_comm_16777216.png)
 - Performance time appears to decrease as the number of processors increases. More time is spent communicating than performing computations. 
 
 ##### 2^26 array element graphs
-![Alt text](Graphs/samplesort_main_67108864.png)
-![Alt text](Graphs/samplesort_comp_67108864.png)
-![Alt text](Graphs/samplesort_comm_67108864.png)
+![Alt text](Graphs/samplesort/samplesort_main_67108864.png)
+![Alt text](Graphs/samplesort/samplesort_comp_67108864.png)
+![Alt text](Graphs/samplesort/samplesort_comm_67108864.png)
 - The only job that has been run with a 2^26 array input size was the 1024 process job. There is no other data to compare this point against. Comparatively, the most time was spent communicating, not performing computations. 
 
 ##### 2^28 array element graphs
@@ -855,16 +855,139 @@ I had issues running jobs with 512 and 1024 processors on Grace. Hydra consisten
 In general, the current implementation of sample sort appears to not scale well due to the amount of time spent communicating. Performance time also almost always appears to decrease as the number of processors increases. I intend on reconfiguring my code to reduce communication times and rerunning all of my jobs again in the next week to have more comprehensive data.  
 
 #### Merge Sort Performance Evaluation:
-```
-Content to be added later
-```
+There were many issues at the larger processor counts of 512 and 1024, consistent errors resulting in a lack of data for many points within 512 processors and all in 1024, this is most likely due to the excessive communication loop required to make merge sort work and it lacks scalability to higher processor counts.
+
+##### 2^16 array element graphs
+![Alt text](Graphs/ms_main_16.png)
+![Alt text](Graphs/ms_comm_16.png)
+![Alt text](Graphs/ms_comp_16.png)
+- Here computation time has a negligible influence on the total run time, meaning the algorithm is far less efficient with more processors at a higher run time due to higher communication overhead being the driving factor.
+##### 2^18 array element graphs
+![Alt text](Graphs/ms_main_18.png)
+![Alt text](Graphs/ms_comm_18.png)
+![Alt text](Graphs/ms_comp_18.png)
+- The same trend is observed at this array size as in 2^16
+##### 2^20 array element graphs
+![Alt text](Graphs/ms_main_20.png)
+![Alt text](Graphs/ms_comm_20.png)
+![Alt text](Graphs/ms_comp_20.png)
+- The same trend is observed at this array size as in 2^16
+##### 2^22 array element graphs
+![Alt text](Graphs/ms_main_22.png)
+![Alt text](Graphs/ms_comm_22.png)
+![Alt text](Graphs/ms_comp_22.png)
+- The same trend is observed at this array size as in 2^16, though a slight performance gain can be found at around 4-8 processors
+##### 2^24 array element graphs
+![Alt text](Graphs/ms_main_24.png)
+![Alt text](Graphs/ms_comm_24.png)
+![Alt text](Graphs/ms_comp_24.png)
+- An exponential decay is more prevalent here and optimal time is around 16-32 procs
+##### 2^26 array element graphs
+![Alt text](Graphs/ms_main_26.png)
+![Alt text](Graphs/ms_comm_26.png)
+![Alt text](Graphs/ms_comp_26.png)
+- A strong exponential decay can be observed here showing that computation is the driving factor and significantly beneifts from the smaller array chunks with more processors
+##### 2^28 array element graphs
+![Alt text](Graphs/ms_main_28.png)
+![Alt text](Graphs/ms_comm_28.png)
+![Alt text](Graphs/ms_comp_28.png)
+- Same trend as 2^26
+
+##### Comments:
+It is clear that at the larger array sizes the driving factor in run time of the program is mainly influenced by computation time, as computation time makes up a far higher proportion at the larger array sizes, but for smaller arrays the time benefit is negated by communication overhead and other smaller factors.
+
+For the communication there is a strange spike at 32 processors for some of the larger arrays, I would presume this has something to do with the communication at that point in the node or possibly a limit on memory usage, however the general communication numbers are so small that the ultimate impact this spike has on total run time of the program is frankly negligible.
+
+For the computation time it would appear that the sorted array takes consistently the longest time, i presume this has to do with the local sort and that my code does not have a catch to auto-pass an array if it is sorted, meaning it most likely goes through the entire process to sort the array resulting in a slower average time.
 
 #### Column Sort Performance Evaluation:
-```
-Content to be added later
-```
+I was able to collect data for most configurations using up to 256 processors. However, I encountered issues when attempting to run the experiments on 512 and 1024 processors. These configurations caused bad address errors (despite my attempts to allocate more memory and optimize the algorithm. These errors are occuring in my transpose and shift functions.)
+
+Data for 2^26 exists for num_procs 2 and 32 only, all other processor counts failed. Likewise, there is no data for 2^28 due to out of memory errors.
+
+
+## 2^16 array element graphs
+<div style="display: flex; justify-content: space-between;">
+  <img src="Graphs/columnsort/comm_65536.png" alt="Communication" style="width: 30%;">
+  <img src="Graphs/columnsort/comp_65536.png" alt="Computation" style="width: 30%;">
+  <img src="Graphs/columnsort/main_65536.png" alt="Main" style="width: 30%;">
+</div>
+
+#### - Speedup is steady, except for main, which indicates portions of the code not wrapped in comm or comp being spedup. The highest points of speed up occur at 8 and 32. Overall, this indicates that random and reverse sorted are stable input conditions for this algorithm, while sorted and 1% perturbed are heavily influenced by the number of processors.
+
+## 2^18 array element graphs
+<div style="display: flex; justify-content: space-between;">
+  <img src="Graphs/columnsort/comm_262144.png" alt="Communication" style="width: 30%;">
+  <img src="Graphs/columnsort/comp_262144.png" alt="Computation" style="width: 30%;">
+  <img src="Graphs/columnsort/main_262144.png" alt="Main" style="width: 30%;">
+</div>
+
+#### - There was missing data here, but here we can see very steady runtimes for all processors, but see a large jump for 1% perturbed, possibly due to the high optimizations of std::sort.
+
+## 2^20 array element graphs
+<div style="display: flex; justify-content: space-between;">
+  <img src="Graphs/columnsort/comm_1048576.png" alt="Communication" style="width: 30%;">
+  <img src="Graphs/columnsort/comp_1048576.png" alt="Computation" style="width: 30%;">
+  <img src="Graphs/columnsort/main_1048576.png" alt="Main" style="width: 30%;">
+</div>
+
+#### - Speedup jumps up and down for all input types. This could be due to specific transpose conditions, where the number of sends and receives per processor is influenced by the dimension of the matrix (which is r x p)
+
+## 2^22 array element graphs
+<div style="display: flex; justify-content: space-between;">
+  <img src="Graphs/columnsort/comm_4194304.png" alt="Communication" style="width: 30%;">
+  <img src="Graphs/columnsort/comp_4194304.png" alt="Computation" style="width: 30%;">
+  <img src="Graphs/columnsort/main_4194304.png" alt="Main" style="width: 30%;">
+</div>
+
+#### - There are gaps in the data here, (one from p=16 and one from p=64), due to edge cases I did not consider. However, speedup is flat for all input types except for random, which sees drastic increase at p=16 and p=64.
+
+## 2^24 array element graphs
+<div style="display: flex; justify-content: space-between;">
+  <img src="Graphs/columnsort/comm_16777216.png" alt="Communication" style="width: 30%;">
+  <img src="Graphs/columnsort/comp_16777216.png" alt="Computation" style="width: 30%;">
+  <img src="Graphs/columnsort/main_16777216.png" alt="Main" style="width: 30%;">
+</div>
+
+#### - Comm and comp are nearly identical, this is because in column sort,  communication and computation are closely tied together when it comes to tranposing and shifting data.
+
+##### 2^26 array element graphs
+<div style="display: flex; justify-content: space-between;">
+  <img src="Graphs/columnsort/comm_67108864.png" alt="Communication" style="width: 30%;">
+  <img src="Graphs/columnsort/comp_67108864.png" alt="Computation" style="width: 30%;">
+  <img src="Graphs/columnsort/main_67108864.png" alt="Main" style="width: 30%;">
+</div>
+
+#### - I was only able to get four data points (all on p=2).
+
+## 2^28 array element graphs
+#### - No data points for 2^28
+
+## Comments
+Overall, column sort doesn't speedup much after hitting 32 processors. On paper it should scale well, but I was never able to finish running any data on 512 or 1024, which tells me the actual implementation struggles with out of memory errors and an increase in communication costs. (currently, each value not changing position within its own rank sends data to another rank, I tried to optimize this but ran out of time)
 
 #### Bitonic Sort Performance Evaluation:
-```
-Content to be added later
-```
+1024 processors tasks are impossible run because of hydra issues, 2^28 are way too expensive to run with my algorithm, and I'm at risk of going into credit debt. I was able to get some data point for 2^26, but not too much. I tried 3 methods of communicating data to the main worker, however each have their own issue that was bottlenecking the speedup.
+##### Graphs 
+![alt text](Graphs/bitonics/whole65536.png)
+![alt text](Graphs/bitonics/whole262144.png)
+![alt text](Graphs/bitonics/whole1048576.png)
+![alt text](Graphs/bitonics/whole4194304.png)
+![alt text](Graphs/bitonics/whole16777216.png)
+![alt text](Graphs/bitonics/whole67108864.png)
+There is a really strong and consistent exponentially negative trend in every graph. There is basically no variations between the different types of array inputs. This makes sense since bitonic sort performs the same amount of comparisons regardless of how the data is arranged in the array.
+![alt text](Graphs/bitonics/comm65536.png)
+![alt text](Graphs/bitonics/comm262144.png)
+![alt text](Graphs/bitonics/comm1048576.png)
+![alt text](Graphs/bitonics/comm4194304.png)
+![alt text](Graphs/bitonics/comm16777216.png)
+![alt text](Graphs/bitonics/comm67108864.png)
+Again there is a really strong and consistent exponentially negative trend in every graph. My hypothesis is that with more processors, communication routing get more complicated, which increases runtime and decreases speed up. Speed up is also higher when the input array size gets larger, this could be due to locality. A single processor might not be able to fit all the data in it's memory, which causes page fault and slows down the communication runtime. Whereas more processors could might smaller segments of the array in their memory.
+![alt text](Graphs/bitonics/comp65536.png)
+![alt text](Graphs/bitonics/comp262144.png)
+![alt text](Graphs/bitonics/comp1048576.png)
+![alt text](Graphs/bitonics/comp4194304.png)
+![alt text](Graphs/bitonics/comp16777216.png)
+![alt text](Graphs/bitonics/comp67108864.png)
+The speed up for the comparisons is a strong linear relationship with no downward or upward trend. Since the number of comparisons being made is still the same, just split across multiple processors, the runtime is consistent throughout.
+
