@@ -861,34 +861,34 @@ I had issues running jobs using 1024 processors on Grace. Hydra consistently wou
 ![Alt text](Graphs/samplesort/samplesort_strong_speedup_main_random.png)
 ![Alt text](Graphs/samplesort/samplesort_strong_speedup_comp_random.png)
 ![Alt text](Graphs/samplesort/samplesort_strong_speedup_comm_random.png)
-- TODO
+- The speedup displayed in main is as expected for samplesort. The speedup calculations for computation are very large, but this is due to the computation times being very fast in the first place. I used std::sort for sorting, so the process of sorting in itself is fast. Any improvements in computation time are dramatically reflected because the starting computation times are so small in the first place. Communication takes more time as the number of processes increase, causing communication to not speed up. Communication takes up much more of the time spent in main than computation, causing the overall speedup in main to be reasonable. 
 
 ###### Sorted Input
 ![Alt text](Graphs/samplesort/samplesort_strong_speedup_main_sorted.png)
 ![Alt text](Graphs/samplesort/samplesort_strong_speedup_comp_sorted.png)
 ![Alt text](Graphs/samplesort/samplesort_strong_speedup_comm_sorted.png)
-- TODO
+- Everything discussed for the random input strong scaling speedup graphs apply here as well.
 
 ###### Reverse Sorted Input
 ![Alt text](Graphs/samplesort/samplesort_strong_speedup_main_reverse.png)
 ![Alt text](Graphs/samplesort/samplesort_strong_speedup_comp_reverse.png)
 ![Alt text](Graphs/samplesort/samplesort_strong_speedup_comm_reverse.png)
-- TODO
+- Everything discussed for the random input strong scaling speedup graphs apply here as well.
 
 ###### 1% Perturbed Input
 ![Alt text](Graphs/samplesort/samplesort_strong_speedup_main_1_perc.png)
 ![Alt text](Graphs/samplesort/samplesort_strong_speedup_comp_1_perc.png)
 ![Alt text](Graphs/samplesort/samplesort_strong_speedup_comm_1_perc.png)
-- TODO
+- Everything discussed for the random input strong scaling speedup graphs apply here as well.
 
 ##### Weak Scaling Time
 ![Alt text](Graphs/samplesort/samplesort_weak_time_main.png)
 ![Alt text](Graphs/samplesort/samplesort_weak_time_comp.png)
 ![Alt text](Graphs/samplesort/samplesort_weak_time_comm.png)
-- TODO
+- Generally, the time spent in main increases with the input size and process count. Random input consistently takes more time to compute and sort than the other inputs, likely due to std::sort first checking if the array it is sorting is actually sorted. Random inputs must actually be sorted, causing the increase in computation times. As the process count increases, the communication time increases as well. This is expected. 
 
 ##### Comments
-In general, the current implementation of sample sort appears to not scale well due to the amount of time spent communicating. Performance time also almost always appears to decrease as the number of processors increases. I intend on reconfiguring my code to reduce communication times and rerunning all of my jobs again in the next week to have more comprehensive data.  
+In general, it appears that communication does not scale well. Communication takes up the majority of the program's clock time. All of the collective communication calls between processes are inherently blocking, so any time not spent doing computations is spent waiting for other processes. Once computation is complete for each process, it is forced to wait at the next barrier until all processes are ready to move on. Due to its buckets, samplesort often has differences in performance time between processes depending on how many array items are sent to each process. Bad sampling can increase program time because array elements are not evenly distributed. Computation time generally acts as expected, and the time decreases as the number of process increase. However, unequal allocation of sampling elements can cause computation time to be uneven across processes, causing the average computation time to increase. 
 
 #### Merge Sort Performance Evaluation:
 There were many issues at the larger processor counts of 512 and 1024, consistent errors resulting in a lack of data for many points within 512 processors and all in 1024, this is most likely due to the excessive communication loop required to make merge sort work and it lacks scalability to higher processor counts.
