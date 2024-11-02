@@ -1009,12 +1009,76 @@ Again there is a really strong and consistent exponentially negative trend in ev
 The speed up for the comparisons is a strong linear relationship with no downward or upward trend. Since the number of comparisons being made is still the same, just split across multiple processors, the runtime is consistent throughout.
 
 ## 5. Presentation
-# Radix Sort
+### Radix Sort
 
-# Column Sort
+### Column Sort
+- #### Strong Scaling
+   ##### 1. Comm
+   <div style="display: flex; flex-wrap: wrap;">
+   <img src="../Graphs/columnsort/strong1/Strong_Scaling_comm_InputSize_65536.png" alt="Communication" style="width: 30%;">
+   <img src="../Graphs/columnsort/strong1/Strong_Scaling_comm_InputSize_262144.png" alt="Communication" style="width: 30%;">
+   <img src="../Graphs/columnsort/strong1/Strong_Scaling_comm_InputSize_1048576.png" alt="Communication" style="width: 30%;">
+   <img src="../Graphs/columnsort/strong1/Strong_Scaling_comm_InputSize_4194304.png" alt="Communication" style="width: 30%;">
+   <img src="../Graphs/columnsort/strong1/Strong_Scaling_comm_InputSize_16777216.png" alt="Communication" style="width: 30%;">
+   </div>
 
-# Sample Sort
+   ##### 2. Comp
+   <div style="display: flex; flex-wrap: wrap;">
+   <img src="../Graphs/columnsort/strong1/Strong_Scaling_comp_large_InputSize_65536.png" alt="Communication" style="width: 30%;">
+   <img src="../Graphs/columnsort/strong1/Strong_Scaling_comp_large_InputSize_262144.png" alt="Communication" style="width: 30%;">
+   <img src="../Graphs/columnsort/strong1/Strong_Scaling_comp_large_InputSize_1048576.png" alt="Communication" style="width: 30%;">
+   <img src="../Graphs/columnsort/strong1/Strong_Scaling_comp_large_InputSize_4194304.png" alt="Communication" style="width: 30%;">
+   <img src="../Graphs/columnsort/strong1/Strong_Scaling_comp_large_InputSize_16777216.png" alt="Communication" style="width: 30%;">
+   </div>
+   
+   ##### 3. Main
+   <div style="display: flex; flex-wrap: wrap;">
+   <img src="../Graphs/columnsort/strong1/Strong_Scaling_main_InputSize_65536.png" alt="Communication" style="width: 30%;">
+   <img src="../Graphs/columnsort/strong1/Strong_Scaling_main_InputSize_262144.png" alt="Communication" style="width: 30%;">
+   <img src="../Graphs/columnsort/strong1/Strong_Scaling_main_InputSize_1048576.png" alt="Communication" style="width: 30%;">
+   <img src="../Graphs/columnsort/strong1/Strong_Scaling_main_InputSize_4194304.png" alt="Communication" style="width: 30%;">
+   <img src="../Graphs/columnsort/strong1/Strong_Scaling_main_InputSize_16777216.png" alt="Communication" style="width: 30%;">
+   </div>
 
-# Merge Sort
+- #### Strong Scaling (speedup)
+   ##### 1. Comm
+   <div style="display: flex; flex-wrap: wrap;">
+   <img src="../Graphs/columnsort/strong2/Strong_Scaling_comm_perturbed.png" alt="Communication" style="width: 30%;">
+   <img src="../Graphs/columnsort/strong2/Strong_Scaling_comm_random.png" alt="Communication" style="width: 30%;">
+   <img src="../Graphs/columnsort/strong2/Strong_Scaling_comm_reverse sorted.png" alt="Communication" style="width: 30%;">
+   <img src="../Graphs/columnsort/strong2/Strong_Scaling_comm_sorted.png" alt="Communication" style="width: 30%;">
+   </div>
 
-# Bitonic Sort
+   ##### 2. Comp
+   <div style="display: flex; flex-wrap: wrap;">
+   <img src="../Graphs/columnsort/strong2/Strong_Scaling_comp_large_perturbed.png" alt="Communication" style="width: 30%;">
+   <img src="../Graphs/columnsort/strong2/Strong_Scaling_comp_large_random.png" alt="Communication" style="width: 30%;">
+   <img src="../Graphs/columnsort/strong2/Strong_Scaling_comp_large_reverse sorted.png" alt="Communication" style="width: 30%;">
+   <img src="../Graphs/columnsort/strong2/Strong_Scaling_comp_large_sorted.png" alt="Communication" style="width: 30%;">
+   </div>
+
+   ##### 3. Main
+   <div style="display: flex; flex-wrap: wrap;">
+   <img src="../Graphs/columnsort/strong2/Strong_Scaling_main_perturbed.png" alt="Communication" style="width: 30%;">
+   <img src="../Graphs/columnsort/strong2/Strong_Scaling_main_random.png" alt="Communication" style="width: 30%;">
+   <img src="../Graphs/columnsort/strong2/Strong_Scaling_main_reverse sorted.png" alt="Communication" style="width: 30%;">
+   <img src="../Graphs/columnsort/strong2/Strong_Scaling_main_sorted.png" alt="Communication" style="width: 30%;">
+   </div>
+
+- #### Weak Scaling
+   ##### 1. Comm
+   <div style="display: flex; flex-wrap: wrap;">
+   <img src="../Graphs/columnsort/weak/Weak_Scaling_comm_InputType_perturbed.png" alt="Communication" style="width: 30%;">
+   <img src="../Graphs/columnsort/weak/Weak_Scaling_comm_InputType_random.png" alt="Communication" style="width: 30%;">
+   <img src="../Graphs/columnsort/weak/Weak_Scaling_comm_InputType_reverse sorted.png" alt="Communication" style="width: 30%;">
+   <img src="../Graphs/columnsort/weak/Weak_Scaling_comm_InputType_sorted.png" alt="Communication" style="width: 30%;">
+   </div>
+
+### Sample Sort
+
+
+### Merge Sort
+
+
+### Bitonic Sort
+
