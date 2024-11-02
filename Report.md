@@ -637,7 +637,7 @@ profile
 
                                        implementation_source  
 profile                                                       
-743475682  AI (ChatGPT) and Online (Class Notes, https://www.geeksforgeeks.org/cpp-program-for-quicksort/, and https://en.wikipedia.org/wiki/Samplesort#:~:text=sequential%2C%20sorting%20algorithm.-,Pseudocode,-%5Bedit%5D)  
+743475682  AI and Online  
 ```
 
 Merge Sort Metadata
@@ -818,43 +818,43 @@ I had issues running jobs using 1024 processors on Grace. Hydra consistently wou
 ![Alt text](Graphs/samplesort/samplesort_main_65536.png)
 ![Alt text](Graphs/samplesort/samplesort_comp_65536.png)
 ![Alt text](Graphs/samplesort/samplesort_comm_65536.png)
-- TTODO 
+- As seen in the graphs, the overall time spent in main slightly increases as the process count increases. This likely has to do with the input array's size. Small coutns of array elements are sent to an increasing number of processes, and communication is less effective than computation when the array sizes are this small. The computation time decreases as the number of processes increases, likely due to each process being responsible for sorting smaller arrays as the process count increases. The computation time greatly increases as the process count increases, likelt due to the reasons discussed previously.  
 
 ###### 2^18 array element graphs
 ![Alt text](Graphs/samplesort/samplesort_main_262144.png)
 ![Alt text](Graphs/samplesort/samplesort_comp_262144.png)
 ![Alt text](Graphs/samplesort/samplesort_comm_262144.png)
-- TTODO
+- The time spent in main slightly increases as the process count increases, other than the outlier for the 1% perturbed input with 512 processors. As discussed previously, the array input size is small at this point, so the benefits of performing computations in parallel are not yet reaped. Communication time slightly increases as the number of processors increase, and computation time decreases as each process is made responsible for smaller and smaller arrays. Although difficult to see, sorted, 1% perturbed, and reverse sorted inputs all had extremely similar computation times. These points overlap in the graph. Random inputs consistently took more time to sort than the other inputs, likely due to sorting having to actually take place. std::sort was used to sort local arrays, and it appears to be more time-efficient with already-sorted inputs.  
 
 ###### 2^20 array element graphs
 ![Alt text](Graphs/samplesort/samplesort_main_1048576.png)
 ![Alt text](Graphs/samplesort/samplesort_comp_1048576.png)
 ![Alt text](Graphs/samplesort/samplesort_comm_1048576.png)
-- TTODO 
+- As seen in previous graphs, the time spent in main slightly increases as the number of processes increase. Despite this, all jobs took less than three seconds to complete. Reverse sorted, 1% perturbed, and sorted inputs all had very similar computation times, and random inputs still took longer to sort, as seen in the computation graph. The communication time spikes greatly for 1% perturbed input at 256 processes and sorted and random inputs at 512 processes. These are likely outliers potentially due to nodes being far apart from each other in Grace, but the difference in time only seems so dramatic because of the other communication times being so short. All communication was complete within a second. 
 
 ###### 2^22 array element graphs
 ![Alt text](Graphs/samplesort/samplesort_main_4194304.png)
 ![Alt text](Graphs/samplesort/samplesort_comp_4194304.png)
 ![Alt text](Graphs/samplesort/samplesort_comm_4194304.png)
-- TTODO
+- The main graph displays a "U" pattern for random input, potentially displaying that random input is most efficient with 16, 32, and 64 processes when the array input size is 2^22 elements. The other input types all continue to have the pattern of generally increasing in time as the process count increases. As seen previously, computation time per process greatly decreases as the number of processes increase. Communication times slightly increase as the process count increases, but all communication was complete within 0.40 seconds. 
 
 ###### 2^24 array element graphs
 ![Alt text](Graphs/samplesort/samplesort_main_16777216.png)
 ![Alt text](Graphs/samplesort/samplesort_comp_16777216.png)
 ![Alt text](Graphs/samplesort/samplesort_comm_16777216.png)
-- TTODO
+- This is the first case where the time spent in main does not increase. Random inputs greatly benefit from an increase in process counts, and reverse sorted, sorted, and 1% perturbed inputs slightly display the "U" pattern seen with random input in the 2^22 main graph. Computation continues to decrease at the process count increases. Communication steadily increases as the process count increases. 
 
 ###### 2^26 array element graphs
 ![Alt text](Graphs/samplesort/samplesort_main_67108864.png)
 ![Alt text](Graphs/samplesort/samplesort_comp_67108864.png)
 ![Alt text](Graphs/samplesort/samplesort_comm_67108864.png)
-- TTODO
+- This is the first graph where all input types appear to benefit from parallelization. Computation times continue to decrease as the process count increases. Communication steadily increases with the process count. With this input size, it appears that parallelization is beneficial and improves the algorithm's performance. 
 
 ###### 2^28 array element graphs
 ![Alt text](Graphs/samplesort/samplesort_main_268435456.png)
 ![Alt text](Graphs/samplesort/samplesort_comp_268435456.png)
 ![Alt text](Graphs/samplesort/samplesort_comm_268435456.png)
-- TTODO
+- I was not able to complete any jobs for 2^28 array input with 64 processes or greater. Despite this, There is an obvious pattern of the time spent in main dramatically decreasing as the process count increases. Computation dramatically decreases as the process count increases. Communication increases with the process count more dramatically than seen previously, but the benefit from parallelizing the computation is greater than the communication increase.  
 
 ##### Strong Scaling Speedup
 ###### Random Input
