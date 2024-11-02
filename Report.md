@@ -637,7 +637,7 @@ profile
 
                                        implementation_source  
 profile                                                       
-743475682  AI (ChatGPT) and Online (Class Notes, https://www.geeksforgeeks.org/cpp-program-for-quicksort/, and https://en.wikipedia.org/wiki/Samplesort#:~:text=sequential%2C%20sorting%20algorithm.-,Pseudocode,-%5Bedit%5D)  
+743475682  AI and Online  
 ```
 
 Merge Sort Metadata
@@ -785,74 +785,132 @@ perform runs that invoke algorithm2 for Sorted, ReverseSorted, and Random data).
  
 #### Radix Sort Performance Evaluation:
 Hydra errors in the grace cluster made it borderline impossible to consistently run 512 and 1024 processes which is why I only have one 512 run. The code becomes to slow for 2^26 elements at lower processor numbers when it takes about 2 hours for one run at 64 processors. The reason for the delay is probably that there is a lot of sending happening that could probably be optimized but I don’t know how to optimize it yet so I can’t run the largest problem size. 
-##### Graphs 
-![alt text](Graphs/main-65536.png)
-![alt text](Graphs/main-262144.png)
-![alt text](Graphs/main-1048576.png)
-![alt text](Graphs/main-4194304.png)
-![alt text](Graphs/main-16777216.png)
-![alt text](Graphs/main-67108864.png)
+##### Strong Scaling Avg Time/Rank Graphs 
+![alt text](Graphs/radix/main-65536.png)
+![alt text](Graphs/radix/main-262144.png)
+![alt text](Graphs/radix/main-1048576.png)
+![alt text](Graphs/radix/main-4194304.png)
+![alt text](Graphs/radix/main-16777216.png)
+![alt text](Graphs/radix/main-67108864.png)
 There is a general downward trend for all the graph and almost all of them have a spike when reaching 32 processors. The decreasing trend can be attributed to the local array shriking and the proccors having the communicate less when the number of processors goes up since the problem size stays the same. 
-![alt text](Graphs/comm-65536.png)
-![alt text](Graphs/comm-262144.png)
-![alt text](Graphs/comm-1048576.png)
-![alt text](Graphs/comm-4194304.png)
-![alt text](Graphs/comm-16777216.png)
-![alt text](Graphs/comm-67108864.png)
+![alt text](Graphs/radix/comm-65536.png)
+![alt text](Graphs/radix/comm-262144.png)
+![alt text](Graphs/radix/comm-1048576.png)
+![alt text](Graphs/radix/comm-4194304.png)
+![alt text](Graphs/radix/comm-16777216.png)
+![alt text](Graphs/radix/comm-67108864.png)
 There is a general downward trend for all the graph but other than that there isn't much similarity across all the graphs. The decreasing trend can be attributed to the local array shriking and the proccors having the communicate less when the number of processors goes up since the problem size stays the same. 
-![alt text](Graphs/comp-large-65536.png)
-![alt text](Graphs/comp-large-262144.png)
-![alt text](Graphs/comp-large-1048576.png)
-![alt text](Graphs/comp-large-4194304.png)
-![alt text](Graphs/comp-large-16777216.png)
-![alt text](Graphs/comp-large-67108864.png)
-There is very little change in the speed up for computation as the number of processros increase and this is most likely due to the way the caliper barriers were placed during implemenation as there were other place it should have been placed but I didn't notice it until much later. I plan on rerunning my code to get more accurate timings on my algorithim. 
+![alt text](Graphs/radix/comp-large-65536.png)
+![alt text](Graphs/radix/comp-large-262144.png)
+![alt text](Graphs/radix/comp-large-1048576.png)
+![alt text](Graphs/radix/comp-large-4194304.png)
+![alt text](Graphs/radix/comp-large-16777216.png)
+![alt text](Graphs/radix/comp-large-67108864.png)
+There is very little change in the speed up for computation as the number of processros increase and this is most likely due to the way the caliper barriers were placed during implementation as there were other place it should have been placed but I didn't notice it until much later. I plan on rerunning my code to get more accurate timings on my algorithim. 
+
+##### Strong Scaling Speedup Graphs 
+![alt text](Graphs/radix/ss-main-random.png)
+![alt text](Graphs/radix/ss-main-sorted.png)
+![alt text](Graphs/radix/ss-main-reverse.png)
+![alt text](Graphs/radix/ss-main-1p.png)
+All of the graphs look similar which is to be expected since for radix sort, there is very little computation or communication difference for how the array was sorted before hand. The main section has far less speedup compared to comm and comp-large but that can be accounted by the fact that main also includes the data-init and correctness-check sections.
+![alt text](Graphs/radix/ss-comm-random.png)
+![alt text](Graphs/radix/ss-comm-sorted.png)
+![alt text](Graphs/radix/ss-comm-reverse.png)
+![alt text](Graphs/radix/ss-comm-1p.png)
+All of the graphs look similar which is to be expected since for radix sort, there is very little computation or communication difference for how the array was sorted before hand. The runs with the most speedup tend to be the ones with smaller processors which speaks to how much communication increases and processor count increases. 
+
+![alt text](Graphs/radix/ss-comp-large-random.png)
+![alt text](Graphs/radix/ss-comp-large-sorted.png)
+![alt text](Graphs/radix/ss-comp-large-reverse.png)
+![alt text](Graphs/radix/ss-comp-large-1p.png)
+All of the graphs look similar which is to be expceted since for radix sort, there is very little computation or communication difference for how the array was sorted before hand. The runs with the most speedup tend to be the ones with smaller processors which since in my implementation, communication is nessecary for computation to happen in the com-large section, speedup is weighted down by the acmount of communication happening. 
+
+##### Weak Scaling Graphs 
+![alt text](Graphs/radix/ws-main.png)
+![alt text](Graphs/radix/ws-comm.png)
+![alt text](Graphs/radix/ws-comp-large.png)
+The weak scaling graphs have a general upward trend as the number of processors increase indicating that even though the number of processors and the array size increase in tandem, the amount of time per processors still increase indicating the code does not scale as expected. 
+
 
 #### Sample Sort Performance Evaluation
-I had issues running jobs with 512 and 1024 processors on Grace. Hydra consistently would error, and the runs would not complete. Additionally, Grace's exceptionally long queue times on 10/21 and 10/22 made it impossible for me to run more jobs. This is why the graphs for 2^24, 2^26, and 2^28 are sparse. 
+I had issues running jobs using 1024 processors on Grace. Hydra consistently would error, and the runs would not complete. Along with this, I had issues with my larger process and input sizes having segmentation faults I was unable to fix. Because of this, I was not able to run any jobs with more than 64 processors for the 2^28 array input size. Additionally, I had the same issue with segmentation faults with a 2^26 array input size for jobs with 64, 128, and 256 processors. 
 
+In general, it appears that communication does not scale well. Communication takes up the majority of the program's clock time. All of the collective communication calls between processes are inherently blocking, so any time not spent doing computations is spent waiting for other processes. Once computation is complete for each process, it is forced to wait at the next barrier until all processes are ready to move on. Due to its buckets, samplesort often has differences in performance time between processes depending on how many array items are sent to each process. Bad sampling can increase program time because array elements are not evenly distributed. Computation time generally acts as expected, and the time decreases as the number of process increase. However, unequal allocation of sampling elements can cause computation time to be uneven across processes, causing the average computation time to increase.   
 
-##### 2^16 array element graphs
+##### Strong Scaling Time
+###### 2^16 array element graphs
 ![Alt text](Graphs/samplesort/samplesort_main_65536.png)
 ![Alt text](Graphs/samplesort/samplesort_comp_65536.png)
 ![Alt text](Graphs/samplesort/samplesort_comm_65536.png)
-- Computation time decreases as the number of processors increases while the computation time increases. Overall, the general pattern of runtimes is that the runtime decreases as the number of processors increases, but there is a point of dimininishing returns at smaller input sizes. 
+- As seen in the graphs, the overall time spent in main slightly increases as the process count increases. This likely has to do with the input array's size. Small coutns of array elements are sent to an increasing number of processes, and communication is less effective than computation when the array sizes are this small. The computation time decreases as the number of processes increases, likely due to each process being responsible for sorting smaller arrays as the process count increases. The computation time greatly increases as the process count increases, likelt due to the reasons discussed previously.  
 
-##### 2^18 array element graphs
+###### 2^18 array element graphs
 ![Alt text](Graphs/samplesort/samplesort_main_262144.png)
 ![Alt text](Graphs/samplesort/samplesort_comp_262144.png)
 ![Alt text](Graphs/samplesort/samplesort_comm_262144.png)
-- Computation time decreases as the number of processors increases while the computation time increases. Communication had strange spikes for the 1% perturbed and reverse sorted inputs. The sorted input had a consistently low communication time due to array objects not having to be sent between buckets. 
+- The time spent in main slightly increases as the process count increases, other than the outlier for the 1% perturbed input with 512 processors. As discussed previously, the array input size is small at this point, so the benefits of performing computations in parallel are not yet reaped. Communication time slightly increases as the number of processors increase, and computation time decreases as each process is made responsible for smaller and smaller arrays. Although difficult to see, sorted, 1% perturbed, and reverse sorted inputs all had extremely similar computation times. These points overlap in the graph. Random inputs consistently took more time to sort than the other inputs, likely due to sorting having to actually take place. std::sort was used to sort local arrays, and it appears to be more time-efficient with already-sorted inputs.  
 
-##### 2^20 array element graphs
+###### 2^20 array element graphs
 ![Alt text](Graphs/samplesort/samplesort_main_1048576.png)
 ![Alt text](Graphs/samplesort/samplesort_comp_1048576.png)
 ![Alt text](Graphs/samplesort/samplesort_comm_1048576.png)
-- Computation and communication times generally decrease as the number of processors increase. Overall, the general pattern of runtimes is that the runtime decreases as the number of processors increases. All data in these graphs looks as expected. 
+- As seen in previous graphs, the time spent in main slightly increases as the number of processes increase. Despite this, all jobs took less than three seconds to complete. Reverse sorted, 1% perturbed, and sorted inputs all had very similar computation times, and random inputs still took longer to sort, as seen in the computation graph. The communication time spikes greatly for 1% perturbed input at 256 processes and sorted and random inputs at 512 processes. These are likely outliers potentially due to nodes being far apart from each other in Grace, but the difference in time only seems so dramatic because of the other communication times being so short. All communication was complete within a second. 
 
-##### 2^22 array element graphs
+###### 2^22 array element graphs
 ![Alt text](Graphs/samplesort/samplesort_main_4194304.png)
 ![Alt text](Graphs/samplesort/samplesort_comp_4194304.png)
 ![Alt text](Graphs/samplesort/samplesort_comm_4194304.png)
-- There are holes in this graph due to the excessive time that the 2 and 4 processor jobs take with 2^22 array elements as inputs. In general, computation and communication times generally decrease as the number of processors increase.
+- The main graph displays a "U" pattern for random input, potentially displaying that random input is most efficient with 16, 32, and 64 processes when the array input size is 2^22 elements. The other input types all continue to have the pattern of generally increasing in time as the process count increases. As seen previously, computation time per process greatly decreases as the number of processes increase. Communication times slightly increase as the process count increases, but all communication was complete within 0.40 seconds. 
 
-##### 2^24 array element graphs
+###### 2^24 array element graphs
 ![Alt text](Graphs/samplesort/samplesort_main_16777216.png)
 ![Alt text](Graphs/samplesort/samplesort_comp_16777216.png)
 ![Alt text](Graphs/samplesort/samplesort_comm_16777216.png)
-- Performance time appears to decrease as the number of processors increases. More time is spent communicating than performing computations. 
+- This is the first case where the time spent in main does not increase. Random inputs greatly benefit from an increase in process counts, and reverse sorted, sorted, and 1% perturbed inputs slightly display the "U" pattern seen with random input in the 2^22 main graph. Computation continues to decrease at the process count increases. Communication steadily increases as the process count increases. 
 
-##### 2^26 array element graphs
+###### 2^26 array element graphs
 ![Alt text](Graphs/samplesort/samplesort_main_67108864.png)
 ![Alt text](Graphs/samplesort/samplesort_comp_67108864.png)
 ![Alt text](Graphs/samplesort/samplesort_comm_67108864.png)
-- The only job that has been run with a 2^26 array input size was the 1024 process job. There is no other data to compare this point against. Comparatively, the most time was spent communicating, not performing computations. 
+- This is the first graph where all input types appear to benefit from parallelization. Computation times continue to decrease as the process count increases. Communication steadily increases with the process count. With this input size, it appears that parallelization is beneficial and improves the algorithm's performance. 
 
-##### 2^28 array element graphs
-- At this point in time, no jobs have been run with 2^28 array elements in them. This is due to the current implementation of samplesort having poor scaling and timing out within a reasonable amount of time (four hours).
+###### 2^28 array element graphs
+![Alt text](Graphs/samplesort/samplesort_main_268435456.png)
+![Alt text](Graphs/samplesort/samplesort_comp_268435456.png)
+![Alt text](Graphs/samplesort/samplesort_comm_268435456.png)
+- I was not able to complete any jobs for 2^28 array input with 64 processes or greater. Despite this, There is an obvious pattern of the time spent in main dramatically decreasing as the process count increases. Computation dramatically decreases as the process count increases. Communication increases with the process count more dramatically than seen previously, but the benefit from parallelizing the computation is greater than the communication increase.  
 
-##### Comments
-In general, the current implementation of sample sort appears to not scale well due to the amount of time spent communicating. Performance time also almost always appears to decrease as the number of processors increases. I intend on reconfiguring my code to reduce communication times and rerunning all of my jobs again in the next week to have more comprehensive data.  
+##### Strong Scaling Speedup
+###### Random Input
+![Alt text](Graphs/samplesort/samplesort_strong_speedup_main_random.png)
+![Alt text](Graphs/samplesort/samplesort_strong_speedup_comp_random.png)
+![Alt text](Graphs/samplesort/samplesort_strong_speedup_comm_random.png)
+- The speedup displayed in main is as expected for samplesort. The speedup calculations for computation are very large, but this is due to the computation times being very fast in the first place. I used std::sort for sorting, so the process of sorting in itself is fast. Any improvements in computation time are dramatically reflected because the starting computation times are so small in the first place. Communication takes more time as the number of processes increase, causing communication to not speed up. Communication takes up much more of the time spent in main than computation, causing the overall speedup in main to be reasonable. 
+
+###### Sorted Input
+![Alt text](Graphs/samplesort/samplesort_strong_speedup_main_sorted.png)
+![Alt text](Graphs/samplesort/samplesort_strong_speedup_comp_sorted.png)
+![Alt text](Graphs/samplesort/samplesort_strong_speedup_comm_sorted.png)
+- Everything discussed for the random input strong scaling speedup graphs apply here as well.
+
+###### Reverse Sorted Input
+![Alt text](Graphs/samplesort/samplesort_strong_speedup_main_reverse.png)
+![Alt text](Graphs/samplesort/samplesort_strong_speedup_comp_reverse.png)
+![Alt text](Graphs/samplesort/samplesort_strong_speedup_comm_reverse.png)
+- Everything discussed for the random input strong scaling speedup graphs apply here as well.
+
+###### 1% Perturbed Input
+![Alt text](Graphs/samplesort/samplesort_strong_speedup_main_1_perc.png)
+![Alt text](Graphs/samplesort/samplesort_strong_speedup_comp_1_perc.png)
+![Alt text](Graphs/samplesort/samplesort_strong_speedup_comm_1_perc.png)
+- Everything discussed for the random input strong scaling speedup graphs apply here as well.
+
+##### Weak Scaling Time
+![Alt text](Graphs/samplesort/samplesort_weak_time_main.png)
+![Alt text](Graphs/samplesort/samplesort_weak_time_comp.png)
+![Alt text](Graphs/samplesort/samplesort_weak_time_comm.png)
+- Generally, the time spent in main increases with the input size and process count. Random input consistently takes more time to compute and sort than the other inputs, likely due to std::sort first checking if the array it is sorting is actually sorted. Random inputs must actually be sorted, causing the increase in computation times. As the process count increases, the communication time increases as well. This is expected.  
 
 #### Merge Sort Performance Evaluation:
 There were many issues at the larger processor counts of 512 and 1024, consistent errors resulting in a lack of data for many points within 512 processors and all in 1024, this is most likely due to the excessive communication loop required to make merge sort work and it lacks scalability to higher processor counts.
@@ -990,4 +1048,5 @@ Again there is a relatively strong and consistent linear negative trend in every
   <img src="Graphs/bitonics/compPerturbed.png" style="width: 30%;">
 </div>
 The runtime for the computation is a strong exponential decay relationship. Since the number of computation each processor have to do is less, it makes sense the number of computation also decreases in proportion to the number of processors.
+## 5. Presentation
 
