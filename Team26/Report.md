@@ -983,34 +983,7 @@ Data for 2^26 exists for num_procs 2 and 32 only, all other processor counts fai
 ## Comments
 Overall, column sort doesn't speedup much after hitting 32 processors. On paper it should scale well, but I was never able to finish running any data on 512 or 1024, which tells me the actual implementation struggles with out of memory errors and an increase in communication costs. (currently, each value not changing position within its own rank sends data to another rank, I tried to optimize this but ran out of time)
 
-#### Bitonic Sort Performance Evaluation:
-Bitonic have a very long sequential time, but it's excellen parallel scaling allows it to catch up in runtime with the other sorting algorithms. However my implementations has a communication bottleneck that causes it to slow down with processor counts above 128.
-1024 processors tasks are impossible run because of hydra issues, 2^28 are way too expensive to run with my algorithm, and I'm at risk of going into credit debt. I was able to get some data point for 2^26, but not too much. I tried 3 methods of communicating data to the main worker, however each have their own issue that was bottlenecking the speedup.
-##### Graphs 
-<div style="display: flex; justify-content: space-between;">
-  <img src="Graphs/bitonics/mainRandom.png" style="width: 30%;">
-  <img src="Graphs/bitonics/mainReverse.png" style="width: 30%;">
-  <img src="Graphs/bitonics/mainPerturbed.png" style="width: 30%;">
-</div>
-There is a really strong and consistent exponentially negative trend in every graph. There is basically no variations between the different types of array inputs. This makes sense since bitonic sort performs the same amount of comparisons regardless of how the data is arranged in the array.
-<div style="display: flex; justify-content: space-between;">
-  <img src="Graphs/bitonics/commRandom.png" style="width: 30%;">
-  <img src="Graphs/bitonics/commReverse.png" style="width: 30%;">
-  <img src="Graphs/bitonics/commPerturbed.png" style="width: 30%;">
-</div>
-Again there is a relatively strong and consistent linear negative trend in every graph. This makes sense since there's less data to transfer between each process. The amount of times spent communicating also increases with bigger array size since there's more data that needs to be sent
-<div style="display: flex; justify-content: space-between;">
-  <img src="Graphs/bitonics/compRandom.png" style="width: 30%;">
-  <img src="Graphs/bitonics/compReverse.png" style="width: 30%;">
-  <img src="Graphs/bitonics/compPerturbed.png" style="width: 30%;">
-</div>
-The runtime for the computation is a strong exponential decay relationship. Since the number of computation each processor have to do is less, it makes sense the number of computation also decreases in proportion to the number of processors.
-
-
-## 5. Presentation
-### Radix Sort
-
-### Column Sort
+## Column Sort Presentation Graphs
 - #### Strong Scaling
    ##### 1. Comm
    <div style="display: flex; flex-wrap: wrap;">
@@ -1089,11 +1062,26 @@ The runtime for the computation is a strong exponential decay relationship. Sinc
    <img src="../Graphs/columnsort/weak/Weak_Scaling_main_InputType_sorted.png" alt="Communication" style="width: 30%;">
    </div>
 
-### Sample Sort
-
-
-### Merge Sort
-
-
-### Bitonic Sort
+#### Bitonic Sort Performance Evaluation:
+Bitonic have a very long sequential time, but it's excellen parallel scaling allows it to catch up in runtime with the other sorting algorithms. However my implementations has a communication bottleneck that causes it to slow down with processor counts above 128.
+1024 processors tasks are impossible run because of hydra issues, 2^28 are way too expensive to run with my algorithm, and I'm at risk of going into credit debt. I was able to get some data point for 2^26, but not too much. I tried 3 methods of communicating data to the main worker, however each have their own issue that was bottlenecking the speedup.
+##### Graphs 
+<div style="display: flex; justify-content: space-between;">
+  <img src="../Graphs/bitonics/mainRandom.png" style="width: 30%;">
+  <img src="../Graphs/bitonics/mainReverse.png" style="width: 30%;">
+  <img src="../Graphs/bitonics/mainPerturbed.png" style="width: 30%;">
+</div>
+There is a really strong and consistent exponentially negative trend in every graph. There is basically no variations between the different types of array inputs. This makes sense since bitonic sort performs the same amount of comparisons regardless of how the data is arranged in the array.
+<div style="display: flex; justify-content: space-between;">
+  <img src="../Graphs/bitonics/commRandom.png" style="width: 30%;">
+  <img src="../Graphs/bitonics/commReverse.png" style="width: 30%;">
+  <img src="../Graphs/bitonics/commPerturbed.png" style="width: 30%;">
+</div>
+Again there is a relatively strong and consistent linear negative trend in every graph. This makes sense since there's less data to transfer between each process. The amount of times spent communicating also increases with bigger array size since there's more data that needs to be sent
+<div style="display: flex; justify-content: space-between;">
+  <img src="../Graphs/bitonics/compRandom.png" style="width: 30%;">
+  <img src="../Graphs/bitonics/compReverse.png" style="width: 30%;">
+  <img src="../Graphs/bitonics/compPerturbed.png" style="width: 30%;">
+</div>
+The runtime for the computation is a strong exponential decay relationship. Since the number of computation each processor have to do is less, it makes sense the number of computation also decreases in proportion to the number of processors.
 
