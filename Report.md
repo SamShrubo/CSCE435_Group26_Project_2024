@@ -1025,28 +1025,26 @@ Data for 2^26 exists for num_procs 2 and 32 only, all other processor counts fai
 Overall, column sort doesn't speedup much after hitting 32 processors. On paper it should scale well, but I was never able to finish running any data on 512 or 1024, which tells me the actual implementation struggles with out of memory errors and an increase in communication costs. (currently, each value not changing position within its own rank sends data to another rank, I tried to optimize this but ran out of time)
 
 #### Bitonic Sort Performance Evaluation:
+Bitonic have a very long sequential time, but it's excellen parallel scaling allows it to catch up in runtime with the other sorting algorithms. However my implementations has a communication bottleneck that causes it to slow down with processor counts above 128.
 1024 processors tasks are impossible run because of hydra issues, 2^28 are way too expensive to run with my algorithm, and I'm at risk of going into credit debt. I was able to get some data point for 2^26, but not too much. I tried 3 methods of communicating data to the main worker, however each have their own issue that was bottlenecking the speedup.
 ##### Graphs 
-![alt text](Graphs/bitonics/whole65536.png)
-![alt text](Graphs/bitonics/whole262144.png)
-![alt text](Graphs/bitonics/whole1048576.png)
-![alt text](Graphs/bitonics/whole4194304.png)
-![alt text](Graphs/bitonics/whole16777216.png)
-![alt text](Graphs/bitonics/whole67108864.png)
+<div style="display: flex; justify-content: space-between;">
+  <img src="Graphs/bitonics/mainRandom.png" style="width: 30%;">
+  <img src="Graphs/bitonics/mainReverse.png" style="width: 30%;">
+  <img src="Graphs/bitonics/mainPerturbed.png" style="width: 30%;">
+</div>
 There is a really strong and consistent exponentially negative trend in every graph. There is basically no variations between the different types of array inputs. This makes sense since bitonic sort performs the same amount of comparisons regardless of how the data is arranged in the array.
-![alt text](Graphs/bitonics/comm65536.png)
-![alt text](Graphs/bitonics/comm262144.png)
-![alt text](Graphs/bitonics/comm1048576.png)
-![alt text](Graphs/bitonics/comm4194304.png)
-![alt text](Graphs/bitonics/comm16777216.png)
-![alt text](Graphs/bitonics/comm67108864.png)
-Again there is a really strong and consistent exponentially negative trend in every graph. My hypothesis is that with more processors, communication routing get more complicated, which increases runtime and decreases speed up. Speed up is also higher when the input array size gets larger, this could be due to locality. A single processor might not be able to fit all the data in it's memory, which causes page fault and slows down the communication runtime. Whereas more processors could might smaller segments of the array in their memory.
-![alt text](Graphs/bitonics/comp65536.png)
-![alt text](Graphs/bitonics/comp262144.png)
-![alt text](Graphs/bitonics/comp1048576.png)
-![alt text](Graphs/bitonics/comp4194304.png)
-![alt text](Graphs/bitonics/comp16777216.png)
-![alt text](Graphs/bitonics/comp67108864.png)
-The speed up for the comparisons is a strong linear relationship with no downward or upward trend. Since the number of comparisons being made is still the same, just split across multiple processors, the runtime is consistent throughout.
+<div style="display: flex; justify-content: space-between;">
+  <img src="Graphs/bitonics/commRandom.png" style="width: 30%;">
+  <img src="Graphs/bitonics/commReverse.png" style="width: 30%;">
+  <img src="Graphs/bitonics/commPerturbed.png" style="width: 30%;">
+</div>
+Again there is a relatively strong and consistent linear negative trend in every graph. This makes sense since there's less data to transfer between each process. The amount of times spent communicating also increases with bigger array size since there's more data that needs to be sent
+<div style="display: flex; justify-content: space-between;">
+  <img src="Graphs/bitonics/compRandom.png" style="width: 30%;">
+  <img src="Graphs/bitonics/compReverse.png" style="width: 30%;">
+  <img src="Graphs/bitonics/compPerturbed.png" style="width: 30%;">
+</div>
+The runtime for the computation is a strong exponential decay relationship. Since the number of computation each processor have to do is less, it makes sense the number of computation also decreases in proportion to the number of processors.
 ## 5. Presentation
 
