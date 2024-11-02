@@ -808,48 +808,84 @@ There is a general downward trend for all the graph but other than that there is
 ![alt text](Graphs/comp-large-67108864.png)
 There is very little change in the speed up for computation as the number of processros increase and this is most likely due to the way the caliper barriers were placed during implemenation as there were other place it should have been placed but I didn't notice it until much later. I plan on rerunning my code to get more accurate timings on my algorithim. 
 
+
+
 #### Sample Sort Performance Evaluation
-I had issues running jobs with 512 and 1024 processors on Grace. Hydra consistently would error, and the runs would not complete. Additionally, Grace's exceptionally long queue times on 10/21 and 10/22 made it impossible for me to run more jobs. This is why the graphs for 2^24, 2^26, and 2^28 are sparse. 
+I had issues running jobs using 1024 processors on Grace. Hydra consistently would error, and the runs would not complete. Along with this, I had issues with my larger process and input sizes having segmentation faults I was unable to fix. Because of this, I was not able to run any jobs with more than 64 processors for the 2^28 array input size. Additionally, I had the same issue with segmentation faults with a 2^26 array input size for jobs with 64, 128, and 256 processors.    
 
-
-##### 2^16 array element graphs
+##### Strong Scaling Time
+###### 2^16 array element graphs
 ![Alt text](Graphs/samplesort/samplesort_main_65536.png)
 ![Alt text](Graphs/samplesort/samplesort_comp_65536.png)
 ![Alt text](Graphs/samplesort/samplesort_comm_65536.png)
-- Computation time decreases as the number of processors increases while the computation time increases. Overall, the general pattern of runtimes is that the runtime decreases as the number of processors increases, but there is a point of dimininishing returns at smaller input sizes. 
+- TTODO 
 
-##### 2^18 array element graphs
+###### 2^18 array element graphs
 ![Alt text](Graphs/samplesort/samplesort_main_262144.png)
 ![Alt text](Graphs/samplesort/samplesort_comp_262144.png)
 ![Alt text](Graphs/samplesort/samplesort_comm_262144.png)
-- Computation time decreases as the number of processors increases while the computation time increases. Communication had strange spikes for the 1% perturbed and reverse sorted inputs. The sorted input had a consistently low communication time due to array objects not having to be sent between buckets. 
+- TTODO
 
-##### 2^20 array element graphs
+###### 2^20 array element graphs
 ![Alt text](Graphs/samplesort/samplesort_main_1048576.png)
 ![Alt text](Graphs/samplesort/samplesort_comp_1048576.png)
 ![Alt text](Graphs/samplesort/samplesort_comm_1048576.png)
-- Computation and communication times generally decrease as the number of processors increase. Overall, the general pattern of runtimes is that the runtime decreases as the number of processors increases. All data in these graphs looks as expected. 
+- TTODO 
 
-##### 2^22 array element graphs
+###### 2^22 array element graphs
 ![Alt text](Graphs/samplesort/samplesort_main_4194304.png)
 ![Alt text](Graphs/samplesort/samplesort_comp_4194304.png)
 ![Alt text](Graphs/samplesort/samplesort_comm_4194304.png)
-- There are holes in this graph due to the excessive time that the 2 and 4 processor jobs take with 2^22 array elements as inputs. In general, computation and communication times generally decrease as the number of processors increase.
+- TTODO
 
-##### 2^24 array element graphs
+###### 2^24 array element graphs
 ![Alt text](Graphs/samplesort/samplesort_main_16777216.png)
 ![Alt text](Graphs/samplesort/samplesort_comp_16777216.png)
 ![Alt text](Graphs/samplesort/samplesort_comm_16777216.png)
-- Performance time appears to decrease as the number of processors increases. More time is spent communicating than performing computations. 
+- TTODO
 
-##### 2^26 array element graphs
+###### 2^26 array element graphs
 ![Alt text](Graphs/samplesort/samplesort_main_67108864.png)
 ![Alt text](Graphs/samplesort/samplesort_comp_67108864.png)
 ![Alt text](Graphs/samplesort/samplesort_comm_67108864.png)
-- The only job that has been run with a 2^26 array input size was the 1024 process job. There is no other data to compare this point against. Comparatively, the most time was spent communicating, not performing computations. 
+- TTODO
 
-##### 2^28 array element graphs
-- At this point in time, no jobs have been run with 2^28 array elements in them. This is due to the current implementation of samplesort having poor scaling and timing out within a reasonable amount of time (four hours).
+###### 2^28 array element graphs
+![Alt text](Graphs/samplesort/samplesort_main_268435456.png)
+![Alt text](Graphs/samplesort/samplesort_comp_268435456.png)
+![Alt text](Graphs/samplesort/samplesort_comm_268435456.png)
+- TTODO
+
+##### Strong Scaling Speedup
+###### Random Input
+![Alt text](Graphs/samplesort/samplesort_strong_speedup_main_random.png)
+![Alt text](Graphs/samplesort/samplesort_strong_speedup_comp_random.png)
+![Alt text](Graphs/samplesort/samplesort_strong_speedup_comm_random.png)
+- TODO
+
+###### Sorted Input
+![Alt text](Graphs/samplesort/samplesort_strong_speedup_main_sorted.png)
+![Alt text](Graphs/samplesort/samplesort_strong_speedup_comp_sorted.png)
+![Alt text](Graphs/samplesort/samplesort_strong_speedup_comm_sorted.png)
+- TODO
+
+###### Reverse Sorted Input
+![Alt text](Graphs/samplesort/samplesort_strong_speedup_main_reverse.png)
+![Alt text](Graphs/samplesort/samplesort_strong_speedup_comp_reverse.png)
+![Alt text](Graphs/samplesort/samplesort_strong_speedup_comm_reverse.png)
+- TODO
+
+###### 1% Perturbed Input
+![Alt text](Graphs/samplesort/samplesort_strong_speedup_main_1_perc.png)
+![Alt text](Graphs/samplesort/samplesort_strong_speedup_comp_1_perc.png)
+![Alt text](Graphs/samplesort/samplesort_strong_speedup_comm_1_perc.png)
+- TODO
+
+##### Weak Scaling Time
+![Alt text](Graphs/samplesort/samplesort_weak_time_main.png)
+![Alt text](Graphs/samplesort/samplesort_weak_time_comp.png)
+![Alt text](Graphs/samplesort/samplesort_weak_time_comm.png)
+- TODO
 
 ##### Comments
 In general, the current implementation of sample sort appears to not scale well due to the amount of time spent communicating. Performance time also almost always appears to decrease as the number of processors increases. I intend on reconfiguring my code to reduce communication times and rerunning all of my jobs again in the next week to have more comprehensive data.  
