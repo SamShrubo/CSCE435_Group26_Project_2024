@@ -1074,6 +1074,22 @@ The speed up for the comparisons is a strong linear relationship with no downwar
    <img src="../Graphs/columnsort/weak/Weak_Scaling_comm_InputType_sorted.png" alt="Communication" style="width: 30%;">
    </div>
 
+   ##### 2. Comp
+   <div style="display: flex; flex-wrap: wrap;">
+   <img src="../Graphs/columnsort/weak/Weak_Scaling_comp_large_InputType_perturbed.png" alt="Communication" style="width: 30%;">
+   <img src="../Graphs/columnsort/weak/Weak_Scaling_comp_large_InputType_random.png" alt="Communication" style="width: 30%;">
+   <img src="../Graphs/columnsort/weak/Weak_Scaling_comp_large_InputType_reverse sorted.png" alt="Communication" style="width: 30%;">
+   <img src="../Graphs/columnsort/weak/Weak_Scaling_comp_large_InputType_sorted.png" alt="Communication" style="width: 30%;">
+   </div>
+
+   ##### 3. Comp
+   <div style="display: flex; flex-wrap: wrap;">
+   <img src="../Graphs/columnsort/weak/Weak_Scaling_main_InputType_perturbed.png" alt="Communication" style="width: 30%;">
+   <img src="../Graphs/columnsort/weak/Weak_Scaling_main_InputType_random.png" alt="Communication" style="width: 30%;">
+   <img src="../Graphs/columnsort/weak/Weak_Scaling_main_InputType_reverse sorted.png" alt="Communication" style="width: 30%;">
+   <img src="../Graphs/columnsort/weak/Weak_Scaling_main_InputType_sorted.png" alt="Communication" style="width: 30%;">
+   </div>
+
 ### Sample Sort
 
 
