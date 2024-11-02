@@ -1008,3 +1008,13 @@ Again there is a really strong and consistent exponentially negative trend in ev
 ![alt text](../Graphs/bitonics/comp67108864.png)
 The speed up for the comparisons is a strong linear relationship with no downward or upward trend. Since the number of comparisons being made is still the same, just split across multiple processors, the runtime is consistent throughout.
 
+## 5. Presentation
+# Radix Sort
+
+# Column Sort
+
+# Sample Sort
+
+# Merge Sort
+
+# Bitonic Sort
