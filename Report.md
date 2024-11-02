@@ -913,51 +913,90 @@ In general, it appears that communication does not scale well. Communication tak
 - Generally, the time spent in main increases with the input size and process count. Random input consistently takes more time to compute and sort than the other inputs, likely due to std::sort first checking if the array it is sorting is actually sorted. Random inputs must actually be sorted, causing the increase in computation times. As the process count increases, the communication time increases as well. This is expected.  
 
 #### Merge Sort Performance Evaluation:
+
 There were many issues at the larger processor counts of 512 and 1024, consistent errors resulting in a lack of data for many points within 512 processors and all in 1024, this is most likely due to the excessive communication loop required to make merge sort work and it lacks scalability to higher processor counts.
 
 ##### 2^16 array element graphs
-![Alt text](Graphs/ms_main_16.png)
-![Alt text](Graphs/ms_comm_16.png)
-![Alt text](Graphs/ms_comp_16.png)
+
+![Alt text](Graphs/mergesort/ms_main_16.png)
+![Alt text](Graphs/mergesort/ms_comm_16.png)
+![Alt text](Graphs/mergesort/ms_comp_16.png)
+
 - Here computation time has a negligible influence on the total run time, meaning the algorithm is far less efficient with more processors at a higher run time due to higher communication overhead being the driving factor.
+
 ##### 2^18 array element graphs
-![Alt text](Graphs/ms_main_18.png)
-![Alt text](Graphs/ms_comm_18.png)
-![Alt text](Graphs/ms_comp_18.png)
+
+![Alt text](Graphs/mergesort/ms_main_18.png)
+![Alt text](Graphs/mergesort/ms_comm_18.png)
+![Alt text](Graphsmergesort//ms_comp_18.png)
+
 - The same trend is observed at this array size as in 2^16
+
 ##### 2^20 array element graphs
-![Alt text](Graphs/ms_main_20.png)
-![Alt text](Graphs/ms_comm_20.png)
-![Alt text](Graphs/ms_comp_20.png)
+
+![Alt text](Graphs/mergesort/ms_main_20.png)
+![Alt text](Graphs/mergesort/ms_comm_20.png)
+![Alt text](Graphs/mergesort/ms_comp_20.png)
+
 - The same trend is observed at this array size as in 2^16
+
 ##### 2^22 array element graphs
-![Alt text](Graphs/ms_main_22.png)
-![Alt text](Graphs/ms_comm_22.png)
-![Alt text](Graphs/ms_comp_22.png)
+
+![Alt text](Graphs/mergesort/ms_main_22.png)
+![Alt text](Graphs/mergesort/ms_comm_22.png)
+![Alt text](Graphs/mergesort/ms_comp_22.png)
+
 - The same trend is observed at this array size as in 2^16, though a slight performance gain can be found at around 4-8 processors
+
 ##### 2^24 array element graphs
-![Alt text](Graphs/ms_main_24.png)
-![Alt text](Graphs/ms_comm_24.png)
-![Alt text](Graphs/ms_comp_24.png)
+
+![Alt text](Graphs/mergesort/ms_main_24.png)
+![Alt text](Graphs/mergesort/ms_comm_24.png)
+![Alt text](Graphs/mergesort/ms_comp_24.png)
+
 - An exponential decay is more prevalent here and optimal time is around 16-32 procs
+
 ##### 2^26 array element graphs
-![Alt text](Graphs/ms_main_26.png)
-![Alt text](Graphs/ms_comm_26.png)
-![Alt text](Graphs/ms_comp_26.png)
+
+![Alt text](Graphs/mergesort/ms_main_26.png)
+![Alt text](Graphs/mergesort/ms_comm_26.png)
+![Alt text](Graphs/mergesort/ms_comp_26.png)
+
 - A strong exponential decay can be observed here showing that computation is the driving factor and significantly beneifts from the smaller array chunks with more processors
+
 ##### 2^28 array element graphs
-![Alt text](Graphs/ms_main_28.png)
-![Alt text](Graphs/ms_comm_28.png)
-![Alt text](Graphs/ms_comp_28.png)
+
+![Alt text](Graphs/mergesort/ms_main_28.png)
+![Alt text](Graphs/mergesort/ms_comm_28.png)
+![Alt text](Graphs/mergesort/ms_comp_28.png)
+
 - Same trend as 2^26
 
+##### PRESENTATION PLOTS - Total Strong Scaling Clock Time
+
+![Alt text](Graphs/mergesort/main-clock-time.png)
+![Alt text](Graphs/mergesort/comm-clock-time.png)
+![Alt text](Graphs/mergesort/comp-clock-time.png)
+
+We can see the total strong scaling clock time becomes optimal for most array sizes at 16 processors, after that the communication overhead and block times result in minimal performance gains or value. The largest array size of 2^28 does see significant drop in total even to 512 processors, however the performance gain in the individual computations is so minimal it is not worth it for the increased hardware cost.
+
+##### PRESENTATION PLOTS - Total Strong Scaling Speedup
+
+![Alt text](Graphs/mergesort/speedup-main.png)
+![Alt text](Graphs/mergesort/speedup-comm.png)
+![Alt text](Graphs/mergesort/speedup-comp.png)
+
+We see that for every array size there is significant performance speedup in the computations as more processors are added, however in the context of how small those times are we see the tradeoff is not entirely cost effective. We see that for most arrays there is very little speedup gained in the communications area with higher processors, as the array chunks being sent are small but the general overhead increases faster than the performance gain. And we see the performance gain has the largest influence and bottleneck on the overall speedup of the algorithm, where only the largest array size continues to see noticable speedup at processor counts higher than 64.
+
 ##### Comments:
+
 It is clear that at the larger array sizes the driving factor in run time of the program is mainly influenced by computation time, as computation time makes up a far higher proportion at the larger array sizes, but for smaller arrays the time benefit is negated by communication overhead and other smaller factors.
 
 For the communication there is a strange spike at 32 processors for some of the larger arrays, I would presume this has something to do with the communication at that point in the node or possibly a limit on memory usage, however the general communication numbers are so small that the ultimate impact this spike has on total run time of the program is frankly negligible.
 
 For the computation time it would appear that the sorted array takes consistently the longest time, i presume this has to do with the local sort and that my code does not have a catch to auto-pass an array if it is sorted, meaning it most likely goes through the entire process to sort the array resulting in a slower average time.
 
+Taking into context the speedup and strong scaling analysis plots, as my weak scaling plots were unable to plot in a meaningful way, we can gather that this algorithm does scale fairly well with larger input sizes, and estimate its weak scaling as we see a linear increase in speedup following a double in processors to match a doubling rate of change in the speedup for doubled input arrays. We can base this on the random array due to it being a presumed average case.
 #### Column Sort Performance Evaluation:
 I was able to collect data for most configurations using up to 256 processors. However, I encountered issues when attempting to run the experiments on 512 and 1024 processors. These configurations caused bad address errors (despite my attempts to allocate more memory and optimize the algorithm. These errors are occuring in my transpose and shift functions.)
 
