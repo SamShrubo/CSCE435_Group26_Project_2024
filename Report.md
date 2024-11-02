@@ -785,29 +785,52 @@ perform runs that invoke algorithm2 for Sorted, ReverseSorted, and Random data).
  
 #### Radix Sort Performance Evaluation:
 Hydra errors in the grace cluster made it borderline impossible to consistently run 512 and 1024 processes which is why I only have one 512 run. The code becomes to slow for 2^26 elements at lower processor numbers when it takes about 2 hours for one run at 64 processors. The reason for the delay is probably that there is a lot of sending happening that could probably be optimized but I don’t know how to optimize it yet so I can’t run the largest problem size. 
-##### Graphs 
-![alt text](Graphs/main-65536.png)
-![alt text](Graphs/main-262144.png)
-![alt text](Graphs/main-1048576.png)
-![alt text](Graphs/main-4194304.png)
-![alt text](Graphs/main-16777216.png)
-![alt text](Graphs/main-67108864.png)
+##### Strong Scaling Avg Time/Rank Graphs 
+![alt text](Graphs/radix/main-65536.png)
+![alt text](Graphs/radix/main-262144.png)
+![alt text](Graphs/radix/main-1048576.png)
+![alt text](Graphs/radix/main-4194304.png)
+![alt text](Graphs/radix/main-16777216.png)
+![alt text](Graphs/radix/main-67108864.png)
 There is a general downward trend for all the graph and almost all of them have a spike when reaching 32 processors. The decreasing trend can be attributed to the local array shriking and the proccors having the communicate less when the number of processors goes up since the problem size stays the same. 
-![alt text](Graphs/comm-65536.png)
-![alt text](Graphs/comm-262144.png)
-![alt text](Graphs/comm-1048576.png)
-![alt text](Graphs/comm-4194304.png)
-![alt text](Graphs/comm-16777216.png)
-![alt text](Graphs/comm-67108864.png)
+![alt text](Graphs/radix/comm-65536.png)
+![alt text](Graphs/radix/comm-262144.png)
+![alt text](Graphs/radix/comm-1048576.png)
+![alt text](Graphs/radix/comm-4194304.png)
+![alt text](Graphs/radix/comm-16777216.png)
+![alt text](Graphs/radix/comm-67108864.png)
 There is a general downward trend for all the graph but other than that there isn't much similarity across all the graphs. The decreasing trend can be attributed to the local array shriking and the proccors having the communicate less when the number of processors goes up since the problem size stays the same. 
-![alt text](Graphs/comp-large-65536.png)
-![alt text](Graphs/comp-large-262144.png)
-![alt text](Graphs/comp-large-1048576.png)
-![alt text](Graphs/comp-large-4194304.png)
-![alt text](Graphs/comp-large-16777216.png)
-![alt text](Graphs/comp-large-67108864.png)
-There is very little change in the speed up for computation as the number of processros increase and this is most likely due to the way the caliper barriers were placed during implemenation as there were other place it should have been placed but I didn't notice it until much later. I plan on rerunning my code to get more accurate timings on my algorithim. 
+![alt text](Graphs/radix/comp-large-65536.png)
+![alt text](Graphs/radix/comp-large-262144.png)
+![alt text](Graphs/radix/comp-large-1048576.png)
+![alt text](Graphs/radix/comp-large-4194304.png)
+![alt text](Graphs/radix/comp-large-16777216.png)
+![alt text](Graphs/radix/comp-large-67108864.png)
+There is very little change in the speed up for computation as the number of processros increase and this is most likely due to the way the caliper barriers were placed during implementation as there were other place it should have been placed but I didn't notice it until much later. I plan on rerunning my code to get more accurate timings on my algorithim. 
 
+##### Strong Scaling Speedup Graphs 
+![alt text](Graphs/radix/ss-main-random.png)
+![alt text](Graphs/radix/ss-main-sorted.png)
+![alt text](Graphs/radix/ss-main-reverse.png)
+![alt text](Graphs/radix/ss-main-1p.png)
+All of the graphs look similar which is to be expected since for radix sort, there is very little computation or communication difference for how the array was sorted before hand. The main section has far less speedup compared to comm and comp-large but that can be accounted by the fact that main also includes the data-init and correctness-check sections.
+![alt text](Graphs/radix/ss-comm-random.png)
+![alt text](Graphs/radix/ss-comm-sorted.png)
+![alt text](Graphs/radix/ss-comm-reverse.png)
+![alt text](Graphs/radix/ss-comm-1p.png)
+All of the graphs look similar which is to be expected since for radix sort, there is very little computation or communication difference for how the array was sorted before hand. The runs with the most speedup tend to be the ones with smaller processors which speaks to how much communication increases and processor count increases. 
+
+![alt text](Graphs/radix/ss-comp-large-random.png)
+![alt text](Graphs/radix/ss-comp-large-sorted.png)
+![alt text](Graphs/radix/ss-comp-large-reverse.png)
+![alt text](Graphs/radix/ss-comp-large-1p.png)
+All of the graphs look similar which is to be expceted since for radix sort, there is very little computation or communication difference for how the array was sorted before hand. The runs with the most speedup tend to be the ones with smaller processors which since in my implementation, communication is nessecary for computation to happen in the com-large section, speedup is weighted down by the acmount of communication happening. 
+
+##### Weak Scaling Graphs 
+![alt text](Graphs/radix/ws-main.png)
+![alt text](Graphs/radix/ws-comm.png)
+![alt text](Graphs/radix/ws-comp-large.png)
+The weak scaling graphs have a general upward trend as the number of processors increase indicating that even though the number of processors and the array size increase in tandem, the amount of time per processors still increase indicating the code does not scale as expected. 
 #### Sample Sort Performance Evaluation
 I had issues running jobs with 512 and 1024 processors on Grace. Hydra consistently would error, and the runs would not complete. Additionally, Grace's exceptionally long queue times on 10/21 and 10/22 made it impossible for me to run more jobs. This is why the graphs for 2^24, 2^26, and 2^28 are sparse. 
 
@@ -990,4 +1013,5 @@ Again there is a really strong and consistent exponentially negative trend in ev
 ![alt text](Graphs/bitonics/comp16777216.png)
 ![alt text](Graphs/bitonics/comp67108864.png)
 The speed up for the comparisons is a strong linear relationship with no downward or upward trend. Since the number of comparisons being made is still the same, just split across multiple processors, the runtime is consistent throughout.
+## 5. Presentation
 
